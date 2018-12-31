@@ -71,6 +71,7 @@ namespace ScriptEditor
         internal Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth) => document.GetPositionInText(node, letterHeight, letterWidth);
 
 
+        internal void RollbackChanges() => document.RollbackChanges();
 
 
 

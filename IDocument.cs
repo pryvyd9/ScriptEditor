@@ -30,6 +30,8 @@ namespace ScriptEditor
         (int inStringPosition, int row, int inRowPosition) GetPositionInText(int inStringPosition);
         (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node);
         Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth);
+
+        void RollbackChanges();
     }
 
 

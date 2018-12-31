@@ -6,7 +6,7 @@ create lightweight script editor to replace previous one, created on RichTextBox
 
 ## Navigation capabilities:
 - move by arrow keys, home, end, mouse; 
-- caret knows where the line ends and chooses correct position
+- caret knows where the line ends and chooses correct position;
 - caret returns on previous inRowPosition if needed. Optional;
 
 ## Edit capabilities:
@@ -14,11 +14,14 @@ create lightweight script editor to replace previous one, created on RichTextBox
 - put line break. Enter;
 - erase previous character. Back;
 - erase current character. Delete;
+- Undo character insert. Ctrl+Z;
+- Undo line break. Ctrl+Z;
 
 ## Drawbacks:
 - line endings are hard coded. Will be difficult to repair;
 
 ## Known bugs:
+- not all edit capabilities' undo actions implemented. Crash expected;
 
 ## Update:
-line breakes no more break the lines.
+- added undo actions for character insert and line break;

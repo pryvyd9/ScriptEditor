@@ -6,9 +6,9 @@ using System.Windows;
 
 namespace ScriptEditor
 {
-    //public delegate void DocumentUpdatedEventHandler();
+    public delegate void DocumentUpdatedEventHandler();
 
-   
+
 
     public sealed class Document : IDocument
     {
@@ -28,10 +28,11 @@ namespace ScriptEditor
 
         public char[] WhiteDelimiters { get; } = new[] { '\r', '\n', ' ' };
 
-        //public event DocumentUpdatedEventHandler Updated;
+        public event DocumentUpdatedEventHandler Updated;
 
 
-        private ChangesBuffer Buffer { get; } = new ChangesBuffer();
+
+        private readonly ChangesBuffer changes;
 
 
 
@@ -72,6 +73,8 @@ namespace ScriptEditor
                     Lines.Add(line);
                 }
             }
+
+            changes = new ChangesBuffer(this);
         }
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(Point point, double letterHeight, double letterWidth)
@@ -222,6 +225,8 @@ namespace ScriptEditor
             return new Point(x, y);
         }
 
+
+
         public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
         {
             foreach (var item in collection)
@@ -234,11 +239,16 @@ namespace ScriptEditor
         {
             Content.AddBefore(position, ch);
 
+            changes.Add(new Insert(position.Previous));
 
-            if(!LineEnding.Contains(ch) &&
+            if (!LineEnding.Contains(ch) &&
                 Lines.Any(n=>n.Start == position))
             {
-                Lines.First(n => n.Start == position).Start = position.Previous;
+                var line = Lines.First(n => n.Start == position);
+
+                changes.Add(new LineStart(line, position, position.Previous));
+
+                line.Start = position.Previous;
             }
 
         }
@@ -312,6 +322,8 @@ namespace ScriptEditor
             }
             
             line.End = position.Previous;
+
+            changes.Add(new LineBreak(line, newLine));
         }
 
         public void MergeLines(Line first, Line second)
@@ -329,11 +341,22 @@ namespace ScriptEditor
 
 
 
-        public void StartChanges() => Buffer.Start();
+        public void StartChanges()
+        {
+            changes.Start();
+        }
 
-        public void CommitChanges() => Buffer.Commit();
+        public void CommitChanges()
+        {
+            changes.Commit();
 
-        public void RoolbackChanges() => Buffer.RollBack();
+            Updated?.Invoke();
+        }
+
+        public void RollbackChanges()
+        {
+            changes.RollBack();
+        }
 
 
 

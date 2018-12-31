@@ -266,20 +266,21 @@ namespace ScriptEditor
 
             bool upperMode = false;
             bool isShifted = false;
+            bool isControled = false;
 
             if (Keyboard.IsKeyToggled(Key.CapsLock))
-            {
                 upperMode = true;
-            }
-
             if (Keyboard.Modifiers == ModifierKeys.Shift)
-            {
                 isShifted = true;
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+                isControled = true;
+
+            if (!isControled)
+            {
+                ProcessSimpleKeys(e.Key, upperMode, isShifted);
             }
 
-            ProcessSimpleKeys(e.Key, upperMode, isShifted);
-
-            ProcessSpecialKeys(e.Key, upperMode, isShifted);
+            ProcessSpecialKeys(e.Key, upperMode, isShifted, isControled);
 
             return;
 
@@ -342,13 +343,21 @@ namespace ScriptEditor
 
         }
 
-        private void ProcessSpecialKeys(Key key, bool upperMode, bool isShifted)
+        private void ProcessSpecialKeys(Key key, bool upperMode, bool isShifted, bool isControled)
         {
 
             char ch;
 
             switch (key)
             {
+                case Key.Z:
+                    if (isControled)
+                    {
+                        Document.RollbackChanges();
+
+                        Refresh();
+                    }
+                    return;
                 case Key.Space:
                     ch = ' ';
                     break;
