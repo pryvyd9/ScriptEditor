@@ -168,7 +168,7 @@ namespace ScriptEditor
 
         public void Commit()
         {
-            Console.WriteLine("commit");
+
         }
 
         public void RollBack()

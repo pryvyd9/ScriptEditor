@@ -42,6 +42,8 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -58,6 +60,9 @@
     <Compile Include="DocumentChangeProxy.cs" />
     <Compile Include="Editor.cs" />
     <Compile Include="EditorScrollViewer.cs" />
+    <Compile Include="EditorView.xaml.cs">
+      <DependentUpon>EditorView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Entities.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="IDocument.cs" />
@@ -69,6 +74,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="CoolEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditorView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

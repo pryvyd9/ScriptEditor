@@ -22,28 +22,20 @@ namespace ScriptEditor
     {
         public static readonly DependencyProperty UpdateCrutchProperty;
 
-
         public IDocument Document { get; private set; }
-
         public FontFamily FontFamily { get; set; }
-
         public Typeface Typeface { get; set; }
 
-
-        public Panel CursorCanvas { get; set; }
-
-
-
         private Caret Caret { get; }
-
-        private EditorScrollViewer ScrollViewer { get; set; }
+        public EditorScrollViewer ScrollViewer { get; set; }
 
 
         public double LetterHeight => GetFormattedText("A").Height;
         public double LetterWidth => GetFormattedText("A").WidthIncludingTrailingWhitespace;
 
-        private double WidthBuffer => 200;
-        private double HeightBuffer => 200;
+        private const double whiteSpaceOnTheRight = 200;
+        private const double whiteSpaceOnTheBottom = 200;
+        private double MarginLeft => 0;
 
         private bool _shouldKeepFocus = false;
 
@@ -69,15 +61,13 @@ namespace ScriptEditor
             );
         }
 
-
-
-
         public Editor()
         {
             Caret = new Caret
             {
                 HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top
+                VerticalAlignment = VerticalAlignment.Top,
+                Visibility = Visibility.Hidden,
             };
 
             Focusable = true;
@@ -89,7 +79,7 @@ namespace ScriptEditor
             SnapsToDevicePixels = true;
 
 
-            Margin = new Thickness(LetterWidth, 0, LetterWidth, 0);
+            Margin = new Thickness(MarginLeft, 0, 0, 0);
 
             HorizontalAlignment = HorizontalAlignment.Left;
             VerticalAlignment = VerticalAlignment.Top;
@@ -129,7 +119,11 @@ namespace ScriptEditor
 
                 var verticalBuffer = 0;
 
-                if (newPos.inRowPosition <= viewport.firstColumn)
+                if(newPos.inRowPosition == 0)
+                {
+                    ScrollViewer.ScrollToHorizontalOffset(0);
+                }
+                else if (newPos.inRowPosition <= viewport.firstColumn)
                 {
                     ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer + Margin.Left);
                 }
@@ -138,7 +132,11 @@ namespace ScriptEditor
                     ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer + Margin.Left);
                 }
 
-                if (newPos.row <= viewport.firstLine)
+                if (newPos.row == 0)
+                {
+                    ScrollViewer.ScrollToVerticalOffset(0);
+                }
+                else if (newPos.row <= viewport.firstLine)
                 {
                     ScrollViewer.ScrollToVerticalOffset(newPos.row * LetterHeight - verticalBuffer);
                 }
@@ -154,6 +152,8 @@ namespace ScriptEditor
             Document = DocumentChangeProxy.AsIDocument(document);
 
             Document.Content.CollectionChanged += FixCaretPositionOnDocumentChanged;
+
+            Caret.Position = Document.Content.NodeAt(0);
         }
 
         private void FixCaretPositionOnDocumentChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -641,7 +641,6 @@ namespace ScriptEditor
         }
 
 
-
         protected override void OnRender(DrawingContext drawingContext)
         {
             // Fill background
@@ -657,10 +656,12 @@ namespace ScriptEditor
             FormattedText ft2 = GetFormattedText(Document.Text);
 
             // Set new width and height
-            Width = ft2.WidthIncludingTrailingWhitespace + WidthBuffer;
-            Height = ft2.Height + HeightBuffer;
+            Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
+            Height = ft2.Height + whiteSpaceOnTheBottom;
 
-           
+            if(Height < MinHeight)
+                Height = MinHeight;
+
             // Draw text
             drawingContext.DrawText(ft2, new Point(0, 0));
 

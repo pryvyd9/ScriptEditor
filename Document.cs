@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 
@@ -14,7 +15,7 @@ namespace ScriptEditor
         
         public ObservableLinkedList<char> Content { get; } = new ObservableLinkedList<char>();
 
-        public List<Line> Lines { get; } = new List<Line>();
+        public ObservableCollection<Line> Lines { get; } = new ObservableCollection<Line>();
 
         public List<TextDecorationBlock> TextDecorations { get; } = new List<TextDecorationBlock>();
 

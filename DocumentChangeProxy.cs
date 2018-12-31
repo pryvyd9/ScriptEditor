@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Windows;
 using ImpromptuInterface;
@@ -14,7 +15,7 @@ namespace ScriptEditor
 
         internal ObservableLinkedList<char> Content => document.Content;
         internal List<TextDecorationBlock> TextDecorations => document.TextDecorations;
-        internal List<Line> Lines => document.Lines;
+        internal ObservableCollection<Line> Lines => document.Lines;
         internal char[] InvisibleCharacters => document.InvisibleCharacters;
         internal string Text => document.Text;
         internal string LineEnding => document.LineEnding;

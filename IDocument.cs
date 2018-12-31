@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Windows;
 
 
@@ -7,7 +8,7 @@ namespace ScriptEditor
     public interface IDocument
     {
         ObservableLinkedList<char> Content { get; }
-        List<Line> Lines { get; }
+        ObservableCollection<Line> Lines { get; }
         List<TextDecorationBlock> TextDecorations { get; }
         char[] InvisibleCharacters { get; }
         string LineEnding { get; }

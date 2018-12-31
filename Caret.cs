@@ -9,9 +9,32 @@ namespace ScriptEditor
 {
     public class Caret : FrameworkElement
     {
+        public static readonly DependencyProperty BrushProperty;
+
+        public new Visibility Visibility
+        {
+            get => base.Visibility;
+            set
+            {
+                base.Visibility = value;
+
+                if(value == Visibility.Collapsed || value == Visibility.Hidden)
+                {
+                    timer.Stop();
+                }
+                else
+                {
+                    timer.Start();
+                }
+            }
+        }
+
         public LinkedListNode<char> Position { get; set; }
 
         public Point ContainerPosition;
+
+
+
 
         private TimeSpan AnimationDuration { get; } = TimeSpan.FromMilliseconds(60);
 
@@ -24,13 +47,14 @@ namespace ScriptEditor
             get => (Brush)GetValue(BrushProperty);
             set
             {
-                SetValue(BrushProperty, value);
                 timer.Stop();
+
+                SetValue(BrushProperty, value);
+
                 timer.Start();
             }
         }
 
-        public static readonly DependencyProperty BrushProperty;
 
 
         static Caret()
@@ -53,7 +77,6 @@ namespace ScriptEditor
             timer.Start();
 
             SnapsToDevicePixels = true;
-
         }
 
         public void SetColor(bool transparent)
