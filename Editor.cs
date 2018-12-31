@@ -15,14 +15,14 @@ using System.Windows.Shapes;
 
 namespace ScriptEditor
 {
-   
+
 
     public sealed class Editor : Canvas
     {
         public static readonly DependencyProperty UpdateCrutchProperty;
 
-    
-        public Document Document { get; private set; }
+
+        public IDocument Document { get; private set; }
 
         public FontFamily FontFamily { get; set; }
 
@@ -33,8 +33,8 @@ namespace ScriptEditor
 
 
 
-        private Caret Caret { get; }  
-       
+        private Caret Caret { get; }
+
         private EditorScrollViewer ScrollViewer { get; set; }
 
 
@@ -95,7 +95,6 @@ namespace ScriptEditor
             VerticalAlignment = VerticalAlignment.Top;
 
             Children.Add(Caret);
-
         }
 
 
@@ -107,7 +106,7 @@ namespace ScriptEditor
                 VerticalSingleStepOffset = LetterHeight,
                 HorizontalSingleStepOffset = LetterWidth,
                 Padding = new Thickness(LetterWidth, LetterHeight, LetterWidth, LetterHeight),
-        };
+            };
 
             container.Children.Add(ScrollViewer);
 
@@ -120,7 +119,7 @@ namespace ScriptEditor
 
             SetValue(UpdateCrutchProperty, !(bool)GetValue(UpdateCrutchProperty));
 
-            if(Caret.Position != null)
+            if (Caret.Position != null)
             {
                 Caret.MoveTo(Document.GetPositionInText(Caret.Position, LetterHeight, LetterWidth));
 
@@ -136,7 +135,7 @@ namespace ScriptEditor
                 }
                 else if (newPos.inRowPosition > viewport.lastColumn)
                 {
-                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn-viewport.firstColumn)) * LetterWidth + horizontalBuffer);
+                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer);
                 }
 
                 if (newPos.row <= viewport.firstLine)
@@ -152,7 +151,7 @@ namespace ScriptEditor
 
         public void SetDocument(Document document)
         {
-            Document = document;
+            Document = DocumentChangeProxy.AsIDocument(document);
         }
 
         private FormattedText GetFormattedText(string text)
@@ -289,8 +288,7 @@ namespace ScriptEditor
         private void PutChar(char ch)
         {
             Document.Insert(Caret.Position, ch);
-            //Document.Insert(Document.Content.IndexOf(Caret.Position), ch);
-            //Document.Content.AddBefore(Caret.Position, ch);
+
             Refresh();
         }
 

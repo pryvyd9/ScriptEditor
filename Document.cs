@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
+
 namespace ScriptEditor
 {
     //public delegate void DocumentUpdatedEventHandler();
 
+   
 
-    public sealed class Document
+    public sealed class Document : IDocument
     {
         public LinkedList<char> Content { get; } = new LinkedList<char>();
 
@@ -19,7 +21,7 @@ namespace ScriptEditor
         public string Text => new string(Content.ToArray());
 
 
-
+        
 
 
         public string LineEnding { get; } = "\r\n";
@@ -27,6 +29,10 @@ namespace ScriptEditor
         public char[] WhiteDelimiters { get; } = new[] { '\r', '\n', ' ' };
 
         //public event DocumentUpdatedEventHandler Updated;
+
+
+        private ChangesBuffer Buffer { get; } = new ChangesBuffer();
+
 
 
         public Document(string text)
@@ -228,11 +234,13 @@ namespace ScriptEditor
         {
             Content.AddBefore(position, ch);
 
+
             if(!LineEnding.Contains(ch) &&
                 Lines.Any(n=>n.Start == position))
             {
                 Lines.First(n => n.Start == position).Start = position.Previous;
             }
+
         }
 
         public void Insert(int inStringPosition, char ch)
@@ -281,6 +289,7 @@ namespace ScriptEditor
             }
 
             Content.Remove(node);
+            
         }
 
 
@@ -303,7 +312,6 @@ namespace ScriptEditor
             }
             
             line.End = position.Previous;
-
         }
 
         public void MergeLines(Line first, Line second)
@@ -317,6 +325,19 @@ namespace ScriptEditor
             first.End = second.End;
             Lines.Remove(second);
         }
+
+
+
+
+        public void StartChanges() => Buffer.Start();
+
+        public void CommitChanges() => Buffer.Commit();
+
+        public void RoolbackChanges() => Buffer.RollBack();
+
+
+
+
 
         private bool IsWhiteDelimiter(char ch)
         {
