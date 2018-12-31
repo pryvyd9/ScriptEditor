@@ -77,47 +77,6 @@ namespace ScriptEditor
 
 
 
-        //public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
-        //{
-        //    try
-        //    {
-        //        switch (binder.Name)
-        //        {
-        //            case "Delete":
-        //            case "BreakLine":
-        //            case "Insert":
-        //                result = InvokeChangeable(binder, args);
-        //                break;
-        //            default:
-        //                result = type.GetMethod(binder.Name).Invoke(document, args);
-        //                break;
-        //        }
-
-        //        return true;
-        //    }
-        //    catch
-        //    {
-        //        result = null;
-
-        //        return false;
-        //    }
-        //}
-
-
-        //private object InvokeChangeable(InvokeMemberBinder binder, object[] args)
-        //{
-        //    object result;
-
-        //    document.StartChanges();
-
-        //    result = type.GetMethod(binder.Name).Invoke(document, args);
-
-        //    document.CommitChanges();
-
-        //    return result;
-        //}
-
-
 
 
         internal DocumentChangeProxy(Document document)

@@ -80,13 +80,13 @@ namespace ScriptEditor
                 VerticalAlignment = VerticalAlignment.Top
             };
 
-
             Focusable = true;
             FontFamily = new FontFamily("Courier New");
             Typeface = new Typeface(FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
             Caret.Width = 1;
             Caret.Height = LetterHeight;
+            SnapsToDevicePixels = true;
 
 
             Margin = new Thickness(LetterWidth, 0, LetterWidth, 0);
@@ -233,6 +233,8 @@ namespace ScriptEditor
         {
             Focus();
 
+            Caret.SetColor(false);
+
             // First focus is important to keep.
             ShouldKeepFocusOnce = true;
 
@@ -295,6 +297,8 @@ namespace ScriptEditor
             bool upperMode = false;
             bool isShifted = false;
             bool isControled = false;
+
+            Caret.SetColor(false);
 
             if (Keyboard.IsKeyToggled(Key.CapsLock))
                 upperMode = true;
