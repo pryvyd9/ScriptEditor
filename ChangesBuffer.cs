@@ -8,22 +8,46 @@ namespace ScriptEditor
     {
         public abstract void Revert(Document document);
     }
-
-    public sealed class Insert : Change
+    public sealed class Delete : Change
     {
         /// <summary>
-        /// Node to be inserted
+        /// Character to be deteled
         /// </summary>
-        public LinkedListNode<char> Node { get; set; }
+        public char Character { get; }
 
-        public Insert(LinkedListNode<char> node)
+        /// <summary>
+        /// Position to delete from
+        /// </summary>
+        public int Position { get; }
+
+
+        public Delete(char character, int position)
         {
-            Node = node;
+            Character = character;
+            Position = position;
         }
 
         public override void Revert(Document document)
         {
-            document.Delete(Node);
+            document.Insert(Position, Character);
+        }
+    }
+
+    public sealed class Insert : Change
+    {
+        /// <summary>
+        /// Position of inserted character.
+        /// </summary>
+        public int Position { get; }
+
+        public Insert(int position)
+        {
+            Position = position;
+        }
+
+        public override void Revert(Document document)
+        {
+            document.Delete(Position);
         }
     }
 
@@ -66,6 +90,33 @@ namespace ScriptEditor
         }
     }
 
+
+    public sealed class LineMerge : Change
+    {
+        /// <summary>
+        /// LIne to be expanded.
+        /// </summary>
+        public Line FirstLine { get; }
+
+        /// <summary>
+        /// LIne to be thrown away.
+        /// </summary>
+        public Line SecondLine { get; }
+
+        public LineMerge(Line firstLine, Line secondLine)
+        {
+            FirstLine = firstLine;
+            SecondLine = secondLine;
+        }
+
+        public override void Revert(Document document)
+        {
+            FirstLine.End = SecondLine.Start.Previous;
+
+            document.Lines.Insert(document.Lines.IndexOf(FirstLine) + 1, SecondLine);
+        }
+    }
+
     public class ChangeSession
     {
         private Stack<Change> Changes { get; } = new Stack<Change>();
@@ -95,7 +146,7 @@ namespace ScriptEditor
 
         private readonly Document document;
 
-        private bool isRevertingChanges = false;
+        public bool IsRevertingChanges { get; private set; } = false;
 
         public ChangesBuffer(Document document)
         {
@@ -109,7 +160,7 @@ namespace ScriptEditor
 
         public void Add(Change change)
         {
-            if (isRevertingChanges)
+            if (IsRevertingChanges)
                 return;
 
             CurrentSession.Add(change);
@@ -125,9 +176,13 @@ namespace ScriptEditor
             if (ChangeSessions.Count == 0)
                 return;
 
+            IsRevertingChanges = true;
+
             var session = ChangeSessions.Pop();
 
             session.Rollback(document);
+
+            IsRevertingChanges = false;
         }
     }
 

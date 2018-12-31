@@ -61,6 +61,7 @@
     <Compile Include="Entities.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="IDocument.cs" />
+    <Compile Include="ObservableLinkedList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CoolEditor.xaml.cs">
       <DependentUpon>CoolEditor.xaml</DependentUpon>

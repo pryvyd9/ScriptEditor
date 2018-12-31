@@ -12,11 +12,13 @@ namespace ScriptEditor
         private static readonly Type type = typeof(Document);
         private readonly Document document;
 
-        internal LinkedList<char> Content => document.Content;
+        internal ObservableLinkedList<char> Content => document.Content;
         internal List<TextDecorationBlock> TextDecorations => document.TextDecorations;
         internal List<Line> Lines => document.Lines;
+        internal char[] InvisibleCharacters => document.InvisibleCharacters;
         internal string Text => document.Text;
         internal string LineEnding => document.LineEnding;
+        internal bool IsRevertingChanges => document.IsRevertingChanges;
 
         internal void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
         {

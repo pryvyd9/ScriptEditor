@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -58,7 +59,6 @@ namespace ScriptEditor
 
 
 
-
         static Editor()
         {
             UpdateCrutchProperty = DependencyProperty.Register("UpdateCrutch", typeof(bool), typeof(Editor),
@@ -89,7 +89,7 @@ namespace ScriptEditor
             Caret.Height = LetterHeight;
 
 
-            Margin = new Thickness(0);
+            Margin = new Thickness(LetterWidth, 0, LetterWidth, 0);
 
             HorizontalAlignment = HorizontalAlignment.Left;
             VerticalAlignment = VerticalAlignment.Top;
@@ -105,7 +105,7 @@ namespace ScriptEditor
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
                 VerticalSingleStepOffset = LetterHeight,
                 HorizontalSingleStepOffset = LetterWidth,
-                Padding = new Thickness(LetterWidth, LetterHeight, LetterWidth, LetterHeight),
+                //Padding = new Thickness(LetterWidth, LetterHeight, LetterWidth, LetterHeight),
             };
 
             container.Children.Add(ScrollViewer);
@@ -125,17 +125,17 @@ namespace ScriptEditor
 
                 var newPos = Document.GetPositionInText(Caret.Position);
 
-                var horizontalBuffer = LetterWidth / 2;
+                var horizontalBuffer = LetterWidth/2;
 
                 var verticalBuffer = 0;
 
                 if (newPos.inRowPosition <= viewport.firstColumn)
                 {
-                    ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer);
+                    ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer + Margin.Left);
                 }
-                else if (newPos.inRowPosition > viewport.lastColumn)
+                else if (newPos.inRowPosition > viewport.lastColumn - Margin.Left / LetterWidth)
                 {
-                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer);
+                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer + Margin.Left);
                 }
 
                 if (newPos.row <= viewport.firstLine)
@@ -152,6 +152,35 @@ namespace ScriptEditor
         public void SetDocument(Document document)
         {
             Document = DocumentChangeProxy.AsIDocument(document);
+
+            Document.Content.CollectionChanged += FixCaretPositionOnDocumentChanged;
+        }
+
+        private void FixCaretPositionOnDocumentChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if(e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                if (e.OldItems.Contains(Caret.Position))
+                {
+                    Caret.Position = Caret.Position.Next;
+                }
+            }
+            //else if(e.Action == NotifyCollectionChangedAction.Add)
+            //{
+            //    //if((e.NewItems[0] as LinkedListNode<char>).Value == Document.LineEnding[0] &&
+            //    //    (e.NewItems[e.NewItems.Count - 1] as LinkedListNode<char>).Value == Document.LineEnding.Last())
+            //    //{
+            //    //    return;
+            //    //}
+
+            //    if (e.NewItems[1] == Caret.Position && Document.IsRevertingChanges)
+            //        //Document.InvisibleCharacters.Contains(Caret.Position.Value) && e.NewItems[1] == Caret.Position)
+            //    {
+            //        Caret.Position = Caret.Position.Previous;
+
+            //        //Refresh();
+            //    }
+            //}
         }
 
         private FormattedText GetFormattedText(string text)
@@ -263,7 +292,6 @@ namespace ScriptEditor
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
-
             bool upperMode = false;
             bool isShifted = false;
             bool isControled = false;
@@ -283,7 +311,6 @@ namespace ScriptEditor
             ProcessSpecialKeys(e.Key, upperMode, isShifted, isControled);
 
             return;
-
         }
 
         private void PutChar(char ch)

@@ -2,7 +2,7 @@
 Script editor based on WPF built-in text formatter and OnRender event.
 
 ## Goal:
-create lightweight script editor to replace previous one, created on RichTextBox's basis which was unfathomably slow.
+create lightweight script editor to replace previous one, created on RichTextBox's basis which was unimaginably slow.
 
 ## Navigation capabilities:
 - move by arrow keys, home, end, mouse; 
@@ -16,12 +16,13 @@ create lightweight script editor to replace previous one, created on RichTextBox
 - erase current character. Delete;
 - Undo character insert. Ctrl+Z;
 - Undo line break. Ctrl+Z;
+- Undo line merge. Ctrl+Z;
 
 ## Drawbacks:
 - line endings are hard coded. Will be difficult to repair;
 
 ## Known bugs:
-- not all edit capabilities' undo actions implemented. Crash expected;
-
+- undo cannot discern whether change was on the left or right of caret and will move caret to the right anyway;
+- undo when unremoved character is located right to the right of caret will cause caret to move beyond acceptable position and will be set on '\n' character;
 ## Update:
-- added undo actions for character insert and line break;
+- added undo actions for merging lines;

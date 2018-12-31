@@ -6,12 +6,13 @@ namespace ScriptEditor
 {
     public interface IDocument
     {
-        LinkedList<char> Content { get; }
+        ObservableLinkedList<char> Content { get; }
         List<Line> Lines { get; }
         List<TextDecorationBlock> TextDecorations { get; }
-
+        char[] InvisibleCharacters { get; }
         string LineEnding { get; }
         string Text { get; }
+        bool IsRevertingChanges { get; }
 
 
 

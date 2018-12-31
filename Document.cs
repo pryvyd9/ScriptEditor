@@ -9,10 +9,10 @@ namespace ScriptEditor
     public delegate void DocumentUpdatedEventHandler();
 
 
-
-    public sealed class Document : IDocument
+    public class Document : IDocument
     {
-        public LinkedList<char> Content { get; } = new LinkedList<char>();
+        
+        public ObservableLinkedList<char> Content { get; } = new ObservableLinkedList<char>();
 
         public List<Line> Lines { get; } = new List<Line>();
 
@@ -28,8 +28,11 @@ namespace ScriptEditor
 
         public char[] WhiteDelimiters { get; } = new[] { '\r', '\n', ' ' };
 
+        public char[] InvisibleCharacters { get; } = new[] { '\r', '\n' };
+
         public event DocumentUpdatedEventHandler Updated;
 
+        public bool IsRevertingChanges => changes.IsRevertingChanges;
 
 
         private readonly ChangesBuffer changes;
@@ -239,7 +242,7 @@ namespace ScriptEditor
         {
             Content.AddBefore(position, ch);
 
-            changes.Add(new Insert(position.Previous));
+            changes.Add(new Insert(Content.IndexOf(position.Previous)));
 
             if (!LineEnding.Contains(ch) &&
                 Lines.Any(n=>n.Start == position))
@@ -289,7 +292,9 @@ namespace ScriptEditor
 
         public void Delete(LinkedListNode<char> node)
         {
-            if(Lines.Any(n=>n.Start == node))
+            changes.Add(new Delete(node.Value, Content.IndexOf(node)));
+
+            if (Lines.Any(n=>n.Start == node))
             {
                 Lines.First(n => n.Start == node).Start = node.Next;
             }
@@ -299,7 +304,6 @@ namespace ScriptEditor
             }
 
             Content.Remove(node);
-            
         }
 
 
@@ -328,6 +332,8 @@ namespace ScriptEditor
 
         public void MergeLines(Line first, Line second)
         {
+            changes.Add(new LineMerge(first, second));
+
             var firstEnd = first.End;
             var firstPreEnd = firstEnd.Previous;
 
