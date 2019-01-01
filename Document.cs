@@ -1,32 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 
+
 namespace ScriptEditor
 {
-    //public delegate void DocumentUpdatedEventHandler();
+    public delegate void DocumentUpdatedEventHandler();
 
 
-    public sealed class Document
+    public class Document : IDocument
     {
-        public LinkedList<char> Content { get; } = new LinkedList<char>();
+        
+        public ObservableLinkedList<char> Content { get; } = new ObservableLinkedList<char>();
 
-        public List<Line> Lines { get; } = new List<Line>();
+        public ObservableCollection<Line> Lines { get; } = new ObservableCollection<Line>();
 
         public List<TextDecorationBlock> TextDecorations { get; } = new List<TextDecorationBlock>();
 
         public string Text => new string(Content.ToArray());
 
 
-
+        
 
 
         public string LineEnding { get; } = "\r\n";
 
         public char[] WhiteDelimiters { get; } = new[] { '\r', '\n', ' ' };
 
-        //public event DocumentUpdatedEventHandler Updated;
+        public char[] InvisibleCharacters { get; } = new[] { '\r', '\n' };
+
+        public event DocumentUpdatedEventHandler Updated;
+
+        public bool IsRevertingChanges => changes.IsRevertingChanges;
+
+
+        private readonly ChangesBuffer changes;
+
 
 
         public Document(string text)
@@ -66,6 +77,8 @@ namespace ScriptEditor
                     Lines.Add(line);
                 }
             }
+
+            changes = new ChangesBuffer(this);
         }
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(Point point, double letterHeight, double letterWidth)
@@ -216,6 +229,8 @@ namespace ScriptEditor
             return new Point(x, y);
         }
 
+
+
         public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
         {
             foreach (var item in collection)
@@ -228,11 +243,18 @@ namespace ScriptEditor
         {
             Content.AddBefore(position, ch);
 
-            if(!LineEnding.Contains(ch) &&
+            changes.Add(new Insert(Content.IndexOf(position.Previous)));
+
+            if (!LineEnding.Contains(ch) &&
                 Lines.Any(n=>n.Start == position))
             {
-                Lines.First(n => n.Start == position).Start = position.Previous;
+                var line = Lines.First(n => n.Start == position);
+
+                changes.Add(new LineStart(line, position, position.Previous));
+
+                line.Start = position.Previous;
             }
+
         }
 
         public void Insert(int inStringPosition, char ch)
@@ -271,7 +293,9 @@ namespace ScriptEditor
 
         public void Delete(LinkedListNode<char> node)
         {
-            if(Lines.Any(n=>n.Start == node))
+            changes.Add(new Delete(node.Value, Content.IndexOf(node)));
+
+            if (Lines.Any(n=>n.Start == node))
             {
                 Lines.First(n => n.Start == node).Start = node.Next;
             }
@@ -304,10 +328,13 @@ namespace ScriptEditor
             
             line.End = position.Previous;
 
+            changes.Add(new LineBreak(line, newLine));
         }
 
         public void MergeLines(Line first, Line second)
         {
+            changes.Add(new LineMerge(first, second));
+
             var firstEnd = first.End;
             var firstPreEnd = firstEnd.Previous;
 
@@ -317,6 +344,30 @@ namespace ScriptEditor
             first.End = second.End;
             Lines.Remove(second);
         }
+
+
+
+
+        public void StartChanges()
+        {
+            changes.Start();
+        }
+
+        public void CommitChanges()
+        {
+            changes.Commit();
+
+            Updated?.Invoke();
+        }
+
+        public void RollbackChanges()
+        {
+            changes.RollBack();
+        }
+
+
+
+
 
         private bool IsWhiteDelimiter(char ch)
         {

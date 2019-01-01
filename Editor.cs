@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,38 +16,29 @@ using System.Windows.Shapes;
 
 namespace ScriptEditor
 {
-   
 
     public sealed class Editor : Canvas
     {
         public static readonly DependencyProperty UpdateCrutchProperty;
 
-    
-        public Document Document { get; private set; }
-
+        public IDocument Document { get; private set; }
         public FontFamily FontFamily { get; set; }
-
         public Typeface Typeface { get; set; }
 
-
-        public Panel CursorCanvas { get; set; }
-
-
-
-        private Caret Caret { get; }  
-       
-        private EditorScrollViewer ScrollViewer { get; set; }
+        private Caret Caret { get; }
+        public EditorScrollViewer ScrollViewer { get; set; }
 
 
         public double LetterHeight => GetFormattedText("A").Height;
         public double LetterWidth => GetFormattedText("A").WidthIncludingTrailingWhitespace;
 
-        private double WidthBuffer => 200;
-        private double HeightBuffer => 200;
+        private const double whiteSpaceOnTheRight = 200;
+        private const double whiteSpaceOnTheBottom = 200;
+        private double MarginLeft => 0;
 
         private bool _shouldKeepFocus = false;
 
-        private bool ShouldKeepFocusOnce
+        public bool ShouldKeepFocusOnce
         {
             get => _shouldKeepFocus ? !(_shouldKeepFocus = false) : false;
             set => _shouldKeepFocus = value;
@@ -55,7 +47,6 @@ namespace ScriptEditor
         public bool ShouldRememberLongestInRowPosition { get; set; } = true;
 
         private int desiredInRowPosition;
-
 
 
 
@@ -69,17 +60,14 @@ namespace ScriptEditor
             );
         }
 
-
-
-
         public Editor()
         {
             Caret = new Caret
             {
                 HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top
+                VerticalAlignment = VerticalAlignment.Top,
+                Visibility = Visibility.Hidden,
             };
-
 
             Focusable = true;
             FontFamily = new FontFamily("Courier New");
@@ -87,15 +75,15 @@ namespace ScriptEditor
 
             Caret.Width = 1;
             Caret.Height = LetterHeight;
+            SnapsToDevicePixels = true;
 
 
-            Margin = new Thickness(0);
+            Margin = new Thickness(MarginLeft, 0, 0, 0);
 
             HorizontalAlignment = HorizontalAlignment.Left;
             VerticalAlignment = VerticalAlignment.Top;
 
             Children.Add(Caret);
-
         }
 
 
@@ -106,8 +94,8 @@ namespace ScriptEditor
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
                 VerticalSingleStepOffset = LetterHeight,
                 HorizontalSingleStepOffset = LetterWidth,
-                Padding = new Thickness(LetterWidth, LetterHeight, LetterWidth, LetterHeight),
-        };
+                //Padding = new Thickness(LetterWidth, LetterHeight, LetterWidth, LetterHeight),
+            };
 
             container.Children.Add(ScrollViewer);
 
@@ -120,26 +108,34 @@ namespace ScriptEditor
 
             SetValue(UpdateCrutchProperty, !(bool)GetValue(UpdateCrutchProperty));
 
-            if(Caret.Position != null)
+            if (Caret.Position != null)
             {
                 Caret.MoveTo(Document.GetPositionInText(Caret.Position, LetterHeight, LetterWidth));
 
                 var newPos = Document.GetPositionInText(Caret.Position);
 
-                var horizontalBuffer = LetterWidth / 2;
+                var horizontalBuffer = LetterWidth/2;
 
                 var verticalBuffer = 0;
 
-                if (newPos.inRowPosition <= viewport.firstColumn)
+                if(newPos.inRowPosition == 0)
                 {
-                    ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer);
+                    ScrollViewer.ScrollToHorizontalOffset(0);
                 }
-                else if (newPos.inRowPosition > viewport.lastColumn)
+                else if (newPos.inRowPosition <= viewport.firstColumn)
                 {
-                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn-viewport.firstColumn)) * LetterWidth + horizontalBuffer);
+                    ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer + Margin.Left);
+                }
+                else if (newPos.inRowPosition > viewport.lastColumn - Margin.Left / LetterWidth)
+                {
+                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer + Margin.Left);
                 }
 
-                if (newPos.row <= viewport.firstLine)
+                if (newPos.row == 0)
+                {
+                    ScrollViewer.ScrollToVerticalOffset(0);
+                }
+                else if (newPos.row <= viewport.firstLine)
                 {
                     ScrollViewer.ScrollToVerticalOffset(newPos.row * LetterHeight - verticalBuffer);
                 }
@@ -152,7 +148,38 @@ namespace ScriptEditor
 
         public void SetDocument(Document document)
         {
-            Document = document;
+            Document = DocumentChangeProxy.AsIDocument(document);
+
+            Document.Content.CollectionChanged += FixCaretPositionOnDocumentChanged;
+
+            Caret.Position = Document.Content.NodeAt(0);
+        }
+
+        private void FixCaretPositionOnDocumentChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if(e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                if (e.OldItems.Contains(Caret.Position))
+                {
+                    Caret.Position = Caret.Position.Next;
+                }
+            }
+            //else if(e.Action == NotifyCollectionChangedAction.Add)
+            //{
+            //    //if((e.NewItems[0] as LinkedListNode<char>).Value == Document.LineEnding[0] &&
+            //    //    (e.NewItems[e.NewItems.Count - 1] as LinkedListNode<char>).Value == Document.LineEnding.Last())
+            //    //{
+            //    //    return;
+            //    //}
+
+            //    if (e.NewItems[1] == Caret.Position && Document.IsRevertingChanges)
+            //        //Document.InvisibleCharacters.Contains(Caret.Position.Value) && e.NewItems[1] == Caret.Position)
+            //    {
+            //        Caret.Position = Caret.Position.Previous;
+
+            //        //Refresh();
+            //    }
+            //}
         }
 
         private FormattedText GetFormattedText(string text)
@@ -204,6 +231,8 @@ namespace ScriptEditor
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             Focus();
+
+            Caret.SetColor(false);
 
             // First focus is important to keep.
             ShouldKeepFocusOnce = true;
@@ -264,33 +293,33 @@ namespace ScriptEditor
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
-
             bool upperMode = false;
             bool isShifted = false;
+            bool isControled = false;
+
+            Caret.SetColor(false);
 
             if (Keyboard.IsKeyToggled(Key.CapsLock))
-            {
                 upperMode = true;
-            }
-
             if (Keyboard.Modifiers == ModifierKeys.Shift)
-            {
                 isShifted = true;
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+                isControled = true;
+
+            if (!isControled)
+            {
+                ProcessSimpleKeys(e.Key, upperMode, isShifted);
             }
 
-            ProcessSimpleKeys(e.Key, upperMode, isShifted);
-
-            ProcessSpecialKeys(e.Key, upperMode, isShifted);
+            ProcessSpecialKeys(e.Key, upperMode, isShifted, isControled);
 
             return;
-
         }
 
         private void PutChar(char ch)
         {
             Document.Insert(Caret.Position, ch);
-            //Document.Insert(Document.Content.IndexOf(Caret.Position), ch);
-            //Document.Content.AddBefore(Caret.Position, ch);
+
             Refresh();
         }
 
@@ -344,13 +373,21 @@ namespace ScriptEditor
 
         }
 
-        private void ProcessSpecialKeys(Key key, bool upperMode, bool isShifted)
+        private void ProcessSpecialKeys(Key key, bool upperMode, bool isShifted, bool isControled)
         {
 
             char ch;
 
             switch (key)
             {
+                case Key.Z:
+                    if (isControled)
+                    {
+                        Document.RollbackChanges();
+
+                        Refresh();
+                    }
+                    return;
                 case Key.Space:
                     ch = ' ';
                     break;
@@ -603,7 +640,6 @@ namespace ScriptEditor
         }
 
 
-
         protected override void OnRender(DrawingContext drawingContext)
         {
             // Fill background
@@ -619,10 +655,12 @@ namespace ScriptEditor
             FormattedText ft2 = GetFormattedText(Document.Text);
 
             // Set new width and height
-            Width = ft2.WidthIncludingTrailingWhitespace + WidthBuffer;
-            Height = ft2.Height + HeightBuffer;
+            Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
+            Height = ft2.Height + whiteSpaceOnTheBottom;
 
-           
+            if(Height < MinHeight)
+                Height = MinHeight;
+
             // Draw text
             drawingContext.DrawText(ft2, new Point(0, 0));
 

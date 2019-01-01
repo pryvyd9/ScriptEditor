@@ -20,7 +20,7 @@ namespace ScriptEditor
     /// </summary>
     public partial class CoolEditor : UserControl
     {
-        private readonly List<Editor> editors = new List<Editor>();
+        private readonly List<EditorView> editors = new List<EditorView>();
 
         public CoolEditor()
         {
@@ -29,13 +29,13 @@ namespace ScriptEditor
 
         public void OpenDocument(Document document)
         {
-            Editor editor = new Editor();
+            EditorView editor = new EditorView();
 
             editors.Add(editor);
 
             editor.SetDocument(document);
 
-            editor.Initialize(editorsGrid);
+            editorsGrid.Children.Add(editor);
         }
 
         public void Refresh()
@@ -46,6 +46,9 @@ namespace ScriptEditor
             }
         }
 
-
+        public void Focus(int editorIndex)
+        {
+            editors[editorIndex].Focus();
+        }
     }
 }

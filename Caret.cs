@@ -3,22 +3,100 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Timers;
 
 namespace ScriptEditor
 {
     public class Caret : FrameworkElement
     {
+        public static readonly DependencyProperty BrushProperty;
+
+        public new Visibility Visibility
+        {
+            get => base.Visibility;
+            set
+            {
+                base.Visibility = value;
+
+                if(value == Visibility.Collapsed || value == Visibility.Hidden)
+                {
+                    timer.Stop();
+                }
+                else
+                {
+                    timer.Start();
+                }
+            }
+        }
+
         public LinkedListNode<char> Position { get; set; }
 
         public Point ContainerPosition;
 
 
 
+
         private TimeSpan AnimationDuration { get; } = TimeSpan.FromMilliseconds(60);
 
+        private readonly Timer timer;
+
+        private const double timerSpan = 800;
+
+        public Brush Brush
+        {
+            get => (Brush)GetValue(BrushProperty);
+            set
+            {
+                timer.Stop();
+
+                SetValue(BrushProperty, value);
+
+                timer.Start();
+            }
+        }
 
 
 
+        static Caret()
+        {
+            BrushProperty = DependencyProperty.Register("Brush", typeof(Brush), typeof(Caret),
+                new FrameworkPropertyMetadata(
+                    Brushes.Black,
+                    FrameworkPropertyMetadataOptions.SubPropertiesDoNotAffectRender | FrameworkPropertyMetadataOptions.AffectsRender
+                )
+            );
+        }
+
+
+
+
+        public Caret()
+        {
+            timer = new Timer(timerSpan) { AutoReset = true };
+            timer.Elapsed += Timer_Elapsed;
+            timer.Start();
+
+            SnapsToDevicePixels = true;
+        }
+
+        public void SetColor(bool transparent)
+        {
+            if(transparent)
+                Brush = Brushes.Transparent;
+            else
+                Brush = Brushes.Black;
+        }
+
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (Brush == Brushes.Black)
+                    Brush = Brushes.Transparent;
+                else
+                    Brush = Brushes.Black;
+            });
+        }
 
         public void MoveTo(Point destPoint)
         {
@@ -39,9 +117,10 @@ namespace ScriptEditor
 
         protected override void OnRender(DrawingContext drawingContext)
         {
+            
             base.OnRender(drawingContext);
 
-            drawingContext.DrawRectangle(Brushes.Black, null, new Rect(0, 0, Width, Height));
+            drawingContext.DrawRectangle(Brush, null, new Rect(0, 0, Width, Height));
         }
     }
 }
