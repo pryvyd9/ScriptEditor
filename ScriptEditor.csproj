@@ -71,6 +71,7 @@
     <Compile Include="CoolEditor.xaml.cs">
       <DependentUpon>CoolEditor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RowCounter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CoolEditor.xaml">

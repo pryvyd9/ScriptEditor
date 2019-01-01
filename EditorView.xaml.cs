@@ -22,7 +22,7 @@ namespace ScriptEditor
     {
         private Editor editor;
 
-        private Editor rowCounter;
+        private RowCounter rowCounter;
 
         public EditorView()
         {
@@ -41,17 +41,29 @@ namespace ScriptEditor
             editor.Initialize(editorHoldPlace);
 
 
-            rowCounter = new Editor();
-            rowCounter.Initialize(leftBarHoldPlace);
+            rowCounter = new RowCounter();
+            rowCounter.Initialize(leftBarHoldPlace, editor);
             rowCounter.ScrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
             rowCounter.ScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
-            rowCounter.IsEnabled = false;
+            //rowCounter.IsEnabled = false;
             UpdateRowCount();
 
             editor.Document.Lines.CollectionChanged += Lines_CollectionChanged;
+
+            // Syncronize scrolls
             editor.ScrollViewer.ScrollChanged += ScrollViewer_ScrollChanged;
+            rowCounter.ScrollViewer.ScrollChanged += ScrollViewer_ScrollChanged;
+
+            //rowCounter.GotFocus += Separator_GotFocus;
+            separator.GotFocus += Separator_GotFocus;
 
             Bind();
+        }
+
+        private void Separator_GotFocus(object sender, RoutedEventArgs e)
+        {
+            separator.MoveFocus(new TraversalRequest(FocusNavigationDirection.Right));
+            //throw new NotImplementedException();
         }
 
         private void Bind()
@@ -79,20 +91,31 @@ namespace ScriptEditor
 
         private void ScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            rowCounter.ScrollViewer.ScrollToVerticalOffset(editor.ScrollViewer.VerticalOffset);
+            if (sender.Equals(editor.ScrollViewer))
+            {
+                rowCounter.ScrollViewer.ScrollToVerticalOffset(editor.ScrollViewer.VerticalOffset);
+            }
+            else
+            {
+                editor.ScrollViewer.ScrollToVerticalOffset(rowCounter.ScrollViewer.VerticalOffset);
+                rowCounter.ScrollViewer.ScrollToVerticalOffset(editor.ScrollViewer.VerticalOffset);
+            }
+
         }
 
         private void UpdateRowCount()
         {
-            var count = editor.Document.Lines.Count;
-            var range = Enumerable.Range(1, count);
-            var str = string.Join("\r\n", range);
-            var doc = new Document(str);
+            rowCounter.Count = editor.Document.Lines.Count;
 
-            rowCounter.SetDocument(doc);
+            //var count = editor.Document.Lines.Count;
+            //var range = Enumerable.Range(1, count);
+            //var str = string.Join("\r\n", range);
+            //var doc = new Document(str);
+
+            //rowCounter.SetDocument(doc);
 
             // Crutch to make it refresh!
-            rowCounter.Height += 1e-10;
+            //rowCounter.Height += 1e-10;
         }
 
         private void Lines_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

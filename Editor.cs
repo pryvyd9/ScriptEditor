@@ -17,7 +17,6 @@ using System.Windows.Shapes;
 namespace ScriptEditor
 {
 
-
     public sealed class Editor : Canvas
     {
         public static readonly DependencyProperty UpdateCrutchProperty;
@@ -39,7 +38,7 @@ namespace ScriptEditor
 
         private bool _shouldKeepFocus = false;
 
-        private bool ShouldKeepFocusOnce
+        public bool ShouldKeepFocusOnce
         {
             get => _shouldKeepFocus ? !(_shouldKeepFocus = false) : false;
             set => _shouldKeepFocus = value;

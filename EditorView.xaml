@@ -23,7 +23,7 @@
 
         </Grid>
         <Grid Grid.Column="1" >
-            <Grid HorizontalAlignment="Left" Background="BlueViolet" Width="1"/>
+            <Grid HorizontalAlignment="Left" Name="separator" Background="BlueViolet" Width="1"/>
         </Grid>
         <Grid Name="editorHoldPlace" Grid.Column="2"/>
 

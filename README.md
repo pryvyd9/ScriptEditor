@@ -8,6 +8,7 @@ create lightweight script editor to replace previous one, created on RichTextBox
 - move by arrow keys, home, end, mouse; 
 - caret knows where the line ends and chooses correct position;
 - caret returns on previous inRowPosition if needed. Optional;
+- clicks on row counter will not affect your edit capabilities;
 
 ## Edit capabilities:
 - put character;
@@ -23,8 +24,8 @@ create lightweight script editor to replace previous one, created on RichTextBox
 
 ## Known bugs:
 - undo cannot discern whether change was on the left or right of caret and will move caret to the right anyway;
-- undo when unremoved character is located right to the right of caret will cause caret to move beyond acceptable position and will be set on '\n' character;
-- somehow intrudes into Windows and messes with its interface;
+- undo, when unremoved character is located right to the right of caret, will cause caret to move beyond acceptable position and will be set on '\n' character;
 
 ## Update:
-- added undo actions for merging lines;
+- row counter is now lighter and doesn't couse any problems with windows.
+- added redirecting focus from row counter to editor;
