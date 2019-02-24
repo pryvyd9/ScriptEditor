@@ -13,6 +13,7 @@ namespace ScriptEditor
         char[] InvisibleCharacters { get; }
         string LineEnding { get; }
         string Text { get; }
+        string Name { get; }
         bool IsRevertingChanges { get; }
 
 

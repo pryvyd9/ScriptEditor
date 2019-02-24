@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace ScriptEditor
 {
-    public delegate void DocumentUpdatedEventHandler();
+    public delegate void DocumentUpdatedEventHandler(IDocument document);
 
 
     public class Document : IDocument
@@ -21,8 +21,9 @@ namespace ScriptEditor
 
         public string Text => new string(Content.ToArray());
 
+        public string Name { get; set; } = "noname";
 
-        
+
 
 
         public string LineEnding { get; } = "\r\n";
@@ -357,7 +358,7 @@ namespace ScriptEditor
         {
             changes.Commit();
 
-            Updated?.Invoke();
+            Updated?.Invoke(this);
         }
 
         public void RollbackChanges()

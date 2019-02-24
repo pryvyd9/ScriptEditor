@@ -5,90 +5,136 @@ using System.Dynamic;
 using System.Windows;
 using ImpromptuInterface;
 
+using System.Linq;
 
 namespace ScriptEditor
 {
     internal sealed class DocumentChangeProxy : DynamicObject
     {
         private static readonly Type type = typeof(Document);
-        private readonly Document document;
+        private readonly Document origin;
 
-        internal ObservableLinkedList<char> Content => document.Content;
-        internal List<TextDecorationBlock> TextDecorations => document.TextDecorations;
-        internal ObservableCollection<Line> Lines => document.Lines;
-        internal char[] InvisibleCharacters => document.InvisibleCharacters;
-        internal string Text => document.Text;
-        internal string LineEnding => document.LineEnding;
-        internal bool IsRevertingChanges => document.IsRevertingChanges;
+        //public ObservableLinkedList<char> Content => origin.Content;
+        //public List<TextDecorationBlock> TextDecorations => origin.TextDecorations;
+        //public ObservableCollection<Line> Lines => origin.Lines;
+        //public char[] InvisibleCharacters => origin.InvisibleCharacters;
+        //public string Text => origin.Text;
+        //public string LineEnding => origin.LineEnding;
+        //public bool IsRevertingChanges => origin.IsRevertingChanges;
+        //public string Name => origin.Name;
 
-        internal void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
+        public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
         {
-            document.StartChanges();
-            document.Insert(position, collection);
-            document.CommitChanges();
+            origin.StartChanges();
+            origin.Insert(position, collection);
+            origin.CommitChanges();
         }
-        internal void Insert(LinkedListNode<char> position, char ch)
+        public void Insert(LinkedListNode<char> position, char ch)
         {
-            document.StartChanges();
-            document.Insert(position, ch);
-            document.CommitChanges();
+            origin.StartChanges();
+            origin.Insert(position, ch);
+            origin.CommitChanges();
         }
-        internal void Insert(int inStringPosition, char ch)
+        public void Insert(int inStringPosition, char ch)
         {
-            document.StartChanges();
-            document.Insert(inStringPosition, ch);
-            document.CommitChanges();
-        }
-
-        internal void Delete(int inStringPosition)
-        {
-            document.StartChanges();
-            document.Delete(inStringPosition);
-            document.CommitChanges();
-        }
-        internal void Delete(IEnumerable<LinkedListNode<char>> nodes)
-        {
-            document.StartChanges();
-            document.Delete(nodes);
-            document.CommitChanges();
-        }
-        internal void Delete(LinkedListNode<char> node)
-        {
-            document.StartChanges();
-            document.Delete(node);
-            document.CommitChanges();
+            origin.StartChanges();
+            origin.Insert(inStringPosition, ch);
+            origin.CommitChanges();
         }
 
-        internal void BreakLine(Line line, LinkedListNode<char> position)
+        public void Delete(int inStringPosition)
         {
-            document.StartChanges();
-            document.BreakLine(line, position);
-            document.CommitChanges();
+            origin.StartChanges();
+            origin.Delete(inStringPosition);
+            origin.CommitChanges();
+        }
+        public void Delete(IEnumerable<LinkedListNode<char>> nodes)
+        {
+            origin.StartChanges();
+            origin.Delete(nodes);
+            origin.CommitChanges();
+        }
+        public void Delete(LinkedListNode<char> node)
+        {
+            origin.StartChanges();
+            origin.Delete(node);
+            origin.CommitChanges();
+        }
+
+        public void BreakLine(Line line, LinkedListNode<char> position)
+        {
+            origin.StartChanges();
+            origin.BreakLine(line, position);
+            origin.CommitChanges();
         }
 
 
-        internal (int inStringPosition, int row, int inRowPosition) GetPositionInText(Point point, double letterHeight, double letterWidth) => document.GetPositionInText(point, letterHeight, letterWidth);
-        internal (int inStringPosition, int row, int inRowPosition) GetPositionInText(int row, int inRowPosition) => document.GetPositionInText(row, inRowPosition);
-        internal (int inStringPosition, int row, int inRowPosition) GetPositionInText(int inStringPosition) => document.GetPositionInText(inStringPosition);
-        internal (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node) => document.GetPositionInText(node);
-        internal Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth) => document.GetPositionInText(node, letterHeight, letterWidth);
+        public (int inStringPosition, int row, int inRowPosition) GetPositionInText(Point point, double letterHeight, double letterWidth) => origin.GetPositionInText(point, letterHeight, letterWidth);
+        public (int inStringPosition, int row, int inRowPosition) GetPositionInText(int row, int inRowPosition) => origin.GetPositionInText(row, inRowPosition);
+        public (int inStringPosition, int row, int inRowPosition) GetPositionInText(int inStringPosition) => origin.GetPositionInText(inStringPosition);
+        public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node) => origin.GetPositionInText(node);
+        public Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth) => origin.GetPositionInText(node, letterHeight, letterWidth);
 
 
-        internal void RollbackChanges() => document.RollbackChanges();
+        public void RollbackChanges() => origin.RollbackChanges();
+
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
+        {
+            var proxiedMethod = GetType().GetMethods().SingleOrDefault(n =>
+            {
+                return
+                    n.Name == binder.Name &&
+                    args.Select(m => m.GetType()).SequenceEqual(n.GetParameters().Select(m => m.GetType()));
+            });
+
+            if (proxiedMethod != null)
+            {
+                result = proxiedMethod.Invoke(this, args);
+                return true;
+            }
+
+            result = null;
+            return false;
+        }
 
 
+        private class TypeComparer : IEqualityComparer<Type>
+        {
+            public bool Equals(Type x, Type y)
+            {
+                return x.AssemblyQualifiedName == y.AssemblyQualifiedName;
+            }
 
+            public int GetHashCode(Type obj)
+            {
+                return obj.GetHashCode();
+            }
+        }
 
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            try
+            {
+                result = type.GetProperty(binder.Name).GetValue(origin);
+                return true;
+            }
+            catch
+            {
+                result = null;
+                return false;
+            }
+        }
 
         internal DocumentChangeProxy(Document document)
         {
-            this.document = document;
+            this.origin = document;
         }
 
         internal static IDocument AsIDocument(Document document)
         {
             return new DocumentChangeProxy(document).ActLike<IDocument>();
         }
+
     }
 
 

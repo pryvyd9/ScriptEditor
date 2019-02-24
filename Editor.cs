@@ -658,8 +658,8 @@ namespace ScriptEditor
             Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
             Height = ft2.Height + whiteSpaceOnTheBottom;
 
-            if(Height < MinHeight)
-                Height = MinHeight;
+            //if(Height < ScrollViewer.ViewportHeight)
+            //    Height = ScrollViewer.ViewportHeight;
 
             // Draw text
             drawingContext.DrawText(ft2, new Point(0, 0));
