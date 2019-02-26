@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace ScriptEditor
 {
-    public abstract class Change
+    internal abstract class Change
     {
         public abstract void Revert(Document document);
     }
-    public sealed class Delete : Change
+    internal sealed class Delete : Change
     {
         /// <summary>
         /// Character to be deteled
@@ -33,7 +33,7 @@ namespace ScriptEditor
         }
     }
 
-    public sealed class Insert : Change
+    internal sealed class Insert : Change
     {
         /// <summary>
         /// Position of inserted character.
@@ -51,7 +51,7 @@ namespace ScriptEditor
         }
     }
 
-    public sealed class LineStart : Change
+    internal sealed class LineStart : Change
     {
         public Line Line { get; }
 
@@ -71,7 +71,7 @@ namespace ScriptEditor
         }
     }
 
-    public sealed class LineBreak : Change
+    internal sealed class LineBreak : Change
     {
         public Line FirstLine { get; }
         public Line SecondLine { get; }
@@ -91,7 +91,7 @@ namespace ScriptEditor
     }
 
 
-    public sealed class LineMerge : Change
+    internal sealed class LineMerge : Change
     {
         /// <summary>
         /// LIne to be expanded.
@@ -117,7 +117,7 @@ namespace ScriptEditor
         }
     }
 
-    public class ChangeSession
+    internal class ChangeSession
     {
         private Stack<Change> Changes { get; } = new Stack<Change>();
 
@@ -138,7 +138,7 @@ namespace ScriptEditor
     }
 
 
-    public sealed class ChangesBuffer
+    internal sealed class ChangesBuffer
     {
         private readonly Stack<ChangeSession> ChangeSessions = new Stack<ChangeSession>();
 

@@ -14,7 +14,9 @@ namespace ScriptEditor
         string LineEnding { get; }
         string Text { get; }
         string Name { get; }
+        string Path { get; }
         bool IsRevertingChanges { get; }
+
 
 
 

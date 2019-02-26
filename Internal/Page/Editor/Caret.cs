@@ -7,7 +7,7 @@ using System.Timers;
 
 namespace ScriptEditor
 {
-    public class Caret : FrameworkElement
+    internal class Caret : FrameworkElement
     {
         public static readonly DependencyProperty BrushProperty;
 

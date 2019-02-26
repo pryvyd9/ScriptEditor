@@ -23,6 +23,7 @@ namespace ScriptEditor
 
         public string Name { get; set; } = "noname";
 
+        public string Path { get; set; } = string.Empty;
 
 
 
