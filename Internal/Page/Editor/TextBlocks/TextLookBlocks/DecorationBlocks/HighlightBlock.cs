@@ -42,7 +42,7 @@ namespace ScriptEditor
             left = (int)left;
             top = (int)top;
             width = (int)width+1;
-            height = (int)height;
+            height = (int)height+1;
 
             drawingContext.DrawRectangle(Brush, Pen, new Rect(left, top, width, height));
         }

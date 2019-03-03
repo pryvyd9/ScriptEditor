@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Media;
 
 
 namespace ScriptEditor
@@ -37,6 +38,13 @@ namespace ScriptEditor
         Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth);
 
         void RollbackChanges();
+
+
+        void ApplyHighlight((int start, int end)[] ranges, string[] tags, Brush brush, Pen pen = null);
+        void ApplyTextColor((int start, int end)[] ranges, string[] tags, Brush brush);
+
+
+        (int start, int end)[] SelectAll(string substring, int startIndex, int endIndex);
     }
 
 

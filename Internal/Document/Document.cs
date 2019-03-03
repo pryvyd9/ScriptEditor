@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 
 
 namespace ScriptEditor
@@ -232,6 +233,7 @@ namespace ScriptEditor
         }
 
 
+        #region Edit
 
         public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
         {
@@ -367,7 +369,79 @@ namespace ScriptEditor
             changes.RollBack();
         }
 
+        #endregion
 
+        #region Format
+
+        public void ResetFormat()
+        {
+            TextLookBlocks.Clear();
+        }
+
+        public void ApplyHighlight((int start, int end)[] ranges, string[] tags, Brush brush, Pen pen = null)
+        {
+            foreach (var range in ranges)
+            {
+                var t = new HighlightBlock
+                {
+                    Start = Content.NodeAt(range.start),
+                    End = Content.NodeAt(range.end),
+                    Brush = brush,
+                    Pen = pen,
+                    Tags = tags,
+                };
+
+                TextLookBlocks.Add(t);
+            }
+        }
+
+        public void ApplyTextColor((int start, int end)[] ranges, string[] tags, Brush brush)
+        {
+            foreach (var range in ranges)
+            {
+                var t = new TextColorBlock
+                {
+                    Start = Content.NodeAt(range.start),
+                    End = Content.NodeAt(range.end),
+                    Brush = brush,
+                    Tags = tags,
+                };
+
+                TextLookBlocks.Add(t);
+            }
+        }
+
+        #endregion
+
+        public (int start, int end)[] SelectAll(string substring, int startIndex, int endIndex)
+        {
+            var start = Content.NodeAt(startIndex);
+            var end = Content.NodeAt(endIndex);
+
+
+            var list = new List<(int start, int end)>();
+
+            for (int i = startIndex; ;)
+            {
+                var text = start.GetRange(end).ToStr();
+
+                var offset = text.IndexOf(substring);
+
+                if (offset == -1)
+                {
+                    break;
+                }
+
+                list.Add((i + offset, i + offset + substring.Length - 1));
+
+                start = start.GetAtOffset(offset + substring.Length);
+
+                i += offset + substring.Length;
+
+            }
+
+            return list.ToArray();
+        }
 
 
 

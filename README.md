@@ -26,6 +26,9 @@ create lightweight script editor to replace previous one, created on RichTextBox
 ## Drawbacks:
 - line endings are hard coded. Will be difficult to repair;
 
+## Not planning to work on:
+- text decorations do not interact with ChangeBuffer so they are needed to be reset each time.
+
 ## Known bugs:
 - undo cannot discern whether change was on the left or right of caret and will move caret to the right anyway;
 - undo, when unremoved character is located right to the right of caret, will cause caret to move beyond acceptable position and will be set on '\n' character;

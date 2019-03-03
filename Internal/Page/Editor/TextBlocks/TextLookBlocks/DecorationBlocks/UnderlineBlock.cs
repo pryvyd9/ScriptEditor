@@ -7,10 +7,10 @@ namespace ScriptEditor
     {
         public Pen Pen { get; set; }
 
-        public override void OnRender(Editor editor, DrawingContext drawingContext)
-        {
-            throw new NotImplementedException();
-        }
+        //public override void OnRender(Editor editor, DrawingContext drawingContext)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 
 
