@@ -9,7 +9,7 @@ namespace ScriptEditor
     {
         ObservableLinkedList<char> Content { get; }
         ObservableCollection<Line> Lines { get; }
-        List<TextDecorationBlock> TextDecorations { get; }
+        List<TextLookBlock> TextLookBlocks { get; }
         char[] InvisibleCharacters { get; }
         string LineEnding { get; }
         string Text { get; }

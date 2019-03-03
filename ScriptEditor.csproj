@@ -54,7 +54,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Internal\Page\Editor\TextBlocks\DecorationBlocks\HighlightBlock.cs" />
+    <Compile Include="Internal\Page\Editor\TextBlocks\TextLookBlocks\DecorationBlocks\HighlightBlock.cs" />
     <Compile Include="Internal\Page\Editor\TextBlocks\Block.cs" />
     <Compile Include="Internal\Page\Editor\Caret.cs" />
     <Compile Include="Internal\Page\Editor\ChangesBuffer.cs" />
@@ -74,8 +74,11 @@
       <DependentUpon>CoolEditor.xaml</DependentUpon>
     </Compile>
     <Compile Include="Internal\Page\RowCounter\RowCounter.cs" />
-    <Compile Include="Internal\Page\Editor\TextBlocks\DecorationBlocks\TextDecorationBlock.cs" />
-    <Compile Include="Internal\Page\Editor\TextBlocks\DecorationBlocks\UnderlineBlock.cs" />
+    <Compile Include="Internal\Page\Editor\TextBlocks\TextLookBlocks\DecorationBlocks\TextDecorationBlock.cs" />
+    <Compile Include="Internal\Page\Editor\TextBlocks\TextLookBlocks\DecorationBlocks\UnderlineBlock.cs" />
+    <Compile Include="Internal\Page\Editor\TextBlocks\TextLookBlocks\TextColorBlock.cs" />
+    <Compile Include="Internal\Page\Editor\TextBlocks\TextLookBlocks\TypeFaceBlock.cs" />
+    <Compile Include="Internal\Page\Editor\TextBlocks\TextLookBlocks\TextLookBlock.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CoolEditor.xaml">

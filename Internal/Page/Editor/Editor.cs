@@ -640,17 +640,76 @@ namespace ScriptEditor
         }
 
 
+        private void PrintLetter(
+            HighlightBlock highlightBlock, 
+            TextColorBlock textColorBlock,
+            DrawingContext drawingContext,
+            int inStringPosition)
+        {
+            if (highlightBlock != null)
+            {
+                highlightBlock.OnRender(this, drawingContext, inStringPosition);
+            }
+
+            if (textColorBlock != null)
+            {
+                textColorBlock.OnRender(this, drawingContext, inStringPosition);
+            }
+            else
+            {
+                var startInfo = Document.GetPositionInText(inStringPosition);
+                //var endInfo = editor.Document.GetPositionInText(End);
+                var ch = Document.Content.NodeAt(inStringPosition).Value;
+
+                double left = startInfo.inRowPosition * LetterWidth;
+                double top = startInfo.row * LetterHeight;
+
+                var ft = new FormattedText(
+                    ch.ToString(),
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    Typeface,
+                    14.0,
+                    Brushes.Black,
+                    VisualTreeHelper.GetDpi(this).PixelsPerDip
+                );
+
+                // Draw text
+                drawingContext.DrawText(ft, new Point(left, top));
+            }
+
+        }
+
+        private void PrintText(
+            HighlightBlock[] highlightBlocks, 
+            TextColorBlock[] textColorBlocks,
+            DrawingContext drawingContext)
+        {
+            for (int i = 0; i < Document.Text.Length; i++)
+            {
+                PrintLetter(highlightBlocks[i], textColorBlocks[i], drawingContext, i);
+            }
+        }
+
         protected override void OnRender(DrawingContext drawingContext)
         {
             // Fill background
             drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
 
+            // Get blocks.
+            var highlightBlocks =
+                Block.DistinctDecorations<HighlightBlock>(Document);
 
-            // Highlight text.
-            foreach (var highlight in Document.TextDecorations.OfType<HighlightBlock>())
-            {
-                highlight.OnRender(this, drawingContext);
-            }
+            var textColorBlocks =
+                Block.DistinctDecorations<TextColorBlock>(Document);
+
+            PrintText(highlightBlocks, textColorBlocks, drawingContext);
+
+            //// Highlight text.
+            //foreach (var highlight in Document.TextLookBlocks.OfType<HighlightBlock>())
+            //{
+            //    highlight.OnRender(this, drawingContext);
+            //}
 
             FormattedText ft2 = GetFormattedText(Document.Text);
 
@@ -658,15 +717,46 @@ namespace ScriptEditor
             Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
             Height = ft2.Height + whiteSpaceOnTheBottom;
 
+
             //if(Height < ScrollViewer.ViewportHeight)
             //    Height = ScrollViewer.ViewportHeight;
 
-            // Draw text
-            drawingContext.DrawText(ft2, new Point(0, 0));
+            //// Draw text
+            //drawingContext.DrawText(ft2, new Point(0, 0));
 
             // Draw border
             drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
 
         }
+
+
+        //protected override void OnRender(DrawingContext drawingContext)
+        //{
+        //    // Fill background
+        //    drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
+
+
+        //    // Highlight text.
+        //    foreach (var highlight in Document.TextLookBlocks.OfType<HighlightBlock>())
+        //    {
+        //        highlight.OnRender(this, drawingContext);
+        //    }
+
+        //    FormattedText ft2 = GetFormattedText(Document.Text);
+
+        //    // Set new width and height
+        //    Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
+        //    Height = ft2.Height + whiteSpaceOnTheBottom;
+
+        //    //if(Height < ScrollViewer.ViewportHeight)
+        //    //    Height = ScrollViewer.ViewportHeight;
+
+        //    // Draw text
+        //    drawingContext.DrawText(ft2, new Point(0, 0));
+
+        //    // Draw border
+        //    drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
+
+        //}
     }
 }

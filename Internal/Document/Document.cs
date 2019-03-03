@@ -17,7 +17,7 @@ namespace ScriptEditor
 
         public ObservableCollection<Line> Lines { get; } = new ObservableCollection<Line>();
 
-        public List<TextDecorationBlock> TextDecorations { get; } = new List<TextDecorationBlock>();
+        public List<TextLookBlock> TextLookBlocks { get; } = new List<TextLookBlock>();
 
         public string Text => new string(Content.ToArray());
 
@@ -252,7 +252,7 @@ namespace ScriptEditor
             {
                 var line = Lines.First(n => n.Start == position);
 
-                changes.Add(new LineStart(line, position, position.Previous));
+                changes.Add(new MoveLineStart(line, position, position.Previous));
 
                 line.Start = position.Previous;
             }

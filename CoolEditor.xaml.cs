@@ -95,5 +95,10 @@ namespace ScriptEditor
             }
 
         }
+
+        public void Highlight(Document document)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

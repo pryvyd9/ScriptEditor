@@ -8,6 +8,7 @@ namespace ScriptEditor
     {
         public abstract void Revert(Document document);
     }
+
     internal sealed class Delete : Change
     {
         /// <summary>
@@ -51,14 +52,14 @@ namespace ScriptEditor
         }
     }
 
-    internal sealed class LineStart : Change
+    internal sealed class MoveLineStart : Change
     {
         public Line Line { get; }
 
         public LinkedListNode<char> From { get; }
         public LinkedListNode<char> To { get; }
 
-        public LineStart(Line line, LinkedListNode<char> from, LinkedListNode<char> to)
+        public MoveLineStart(Line line, LinkedListNode<char> from, LinkedListNode<char> to)
         {
             Line = line;
             From = from;
@@ -90,7 +91,6 @@ namespace ScriptEditor
         }
     }
 
-
     internal sealed class LineMerge : Change
     {
         /// <summary>
@@ -116,6 +116,8 @@ namespace ScriptEditor
             document.Lines.Insert(document.Lines.IndexOf(FirstLine) + 1, SecondLine);
         }
     }
+
+
 
     internal class ChangeSession
     {
