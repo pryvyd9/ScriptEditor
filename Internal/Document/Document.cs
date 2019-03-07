@@ -413,7 +413,8 @@ namespace ScriptEditor
 
         #endregion
 
-        public (int start, int end)[] SelectAll(string substring, int startIndex, int endIndex)
+
+        public (int start, int end)[] FindAll(string substring, int startIndex, int endIndex)
         {
             var start = Content.NodeAt(startIndex);
             var end = Content.NodeAt(endIndex);
@@ -442,8 +443,6 @@ namespace ScriptEditor
 
             return list.ToArray();
         }
-
-
 
         private bool IsWhiteDelimiter(char ch)
         {

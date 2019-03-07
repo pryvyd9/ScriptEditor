@@ -50,6 +50,24 @@ namespace ScriptEditor
 
 
 
+        public Brush SelectionBrush { get; set; } = Brushes.SkyBlue;
+        public string[] SelectionTags { get; set; } = new[] { "selection" };
+
+
+
+        private bool isMouseDown;
+        private bool isMouseHeld;
+
+        private int oldCaretInStringPosition;
+        private (int start, int end) selectionPosition;
+        private bool isSelected;
+
+
+
+
+
+
+
         static Editor()
         {
             UpdateCrutchProperty = DependencyProperty.Register("UpdateCrutch", typeof(bool), typeof(Editor),
@@ -108,42 +126,7 @@ namespace ScriptEditor
 
             SetValue(UpdateCrutchProperty, !(bool)GetValue(UpdateCrutchProperty));
 
-            if (Caret.Position != null)
-            {
-                Caret.MoveTo(Document.GetPositionInText(Caret.Position, LetterHeight, LetterWidth));
-
-                var newPos = Document.GetPositionInText(Caret.Position);
-
-                var horizontalBuffer = LetterWidth/2;
-
-                var verticalBuffer = 0;
-
-                if(newPos.inRowPosition == 0)
-                {
-                    ScrollViewer.ScrollToHorizontalOffset(0);
-                }
-                else if (newPos.inRowPosition <= viewport.firstColumn)
-                {
-                    ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer + Margin.Left);
-                }
-                else if (newPos.inRowPosition > viewport.lastColumn - Margin.Left / LetterWidth)
-                {
-                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer + Margin.Left);
-                }
-
-                if (newPos.row == 0)
-                {
-                    ScrollViewer.ScrollToVerticalOffset(0);
-                }
-                else if (newPos.row <= viewport.firstLine)
-                {
-                    ScrollViewer.ScrollToVerticalOffset(newPos.row * LetterHeight - verticalBuffer);
-                }
-                else if (newPos.row >= viewport.lastLine)
-                {
-                    ScrollViewer.ScrollToVerticalOffset((newPos.row - (viewport.lastLine - viewport.firstLine) + 1) * LetterHeight + verticalBuffer);
-                }
-            }
+            MoveCaret(Caret, viewport);
         }
 
         public void SetDocument(Document document)
@@ -195,15 +178,21 @@ namespace ScriptEditor
             );
         }
 
-        private (Point point, int inStringPosition) GetAppropriateCaretPosition(Point point)
+        private (Point point, int inStringPosition) GetAppropriateCaretPosition(Point screenPoint)
         {
-            (int inStringPosition, int row, int inRowPosition) = Document.GetPositionInText(point, LetterHeight, LetterWidth);
+            (int inStringPosition, int row, int inRowPosition) = Document.GetPositionInText(screenPoint, LetterHeight, LetterWidth);
 
             double x = inRowPosition * LetterWidth;
             double y = row * LetterHeight;
 
             return (new Point(x, y), inStringPosition);
         }
+
+        private int GetCaretInStringPosition()
+        {
+            return Document.Content.IndexOf(Caret.Position);
+        }
+
 
         private (int firstLine, int lastLine, int firstColumn, int lastColumn)
             GetVisibleContent()
@@ -227,37 +216,64 @@ namespace ScriptEditor
         }
 
 
-
-        protected override void OnMouseDown(MouseButtonEventArgs e)
+        private void MoveCaret(Caret caret, (int firstLine, int lastLine, int firstColumn, int lastColumn) viewport)
         {
-            Focus();
+            if (caret.Position != null)
+            {
+                caret.MoveTo(Document.GetPositionInText(caret.Position, LetterHeight, LetterWidth));
 
-            Caret.SetColor(false);
+                var newPos = Document.GetPositionInText(caret.Position);
 
-            // First focus is important to keep.
-            ShouldKeepFocusOnce = true;
+                var horizontalBuffer = LetterWidth / 2;
 
-            var (point, inStringPosition) = GetAppropriateCaretPosition(Mouse.GetPosition(this));
+                var verticalBuffer = 0;
+
+                if (newPos.inRowPosition == 0)
+                {
+                    ScrollViewer.ScrollToHorizontalOffset(0);
+                }
+                else if (newPos.inRowPosition <= viewport.firstColumn)
+                {
+                    ScrollViewer.ScrollToHorizontalOffset(newPos.inRowPosition * LetterWidth - horizontalBuffer + Margin.Left);
+                }
+                else if (newPos.inRowPosition > viewport.lastColumn - Margin.Left / LetterWidth)
+                {
+                    ScrollViewer.ScrollToHorizontalOffset((newPos.inRowPosition - (viewport.lastColumn - viewport.firstColumn)) * LetterWidth + horizontalBuffer + Margin.Left);
+                }
+
+                if (newPos.row == 0)
+                {
+                    ScrollViewer.ScrollToVerticalOffset(0);
+                }
+                else if (newPos.row <= viewport.firstLine)
+                {
+                    ScrollViewer.ScrollToVerticalOffset(newPos.row * LetterHeight - verticalBuffer);
+                }
+                else if (newPos.row >= viewport.lastLine)
+                {
+                    ScrollViewer.ScrollToVerticalOffset((newPos.row - (viewport.lastLine - viewport.firstLine) + 1) * LetterHeight + verticalBuffer);
+                }
+            }
+        }
+
+        private void MoveCaret(int inStringPosition)
+        {
+            Caret.Position = Document.Content.NodeAt(inStringPosition);
+
+            desiredInRowPosition = Document.GetPositionInText(inStringPosition).inRowPosition;
+        }
+
+        private void MoveCaretToMousePosition()
+        {
+            var (_, inStringPosition) = GetAppropriateCaretPosition(Mouse.GetPosition(this));
 
             Caret.Position = Document.Content.NodeAt(inStringPosition);
 
             desiredInRowPosition = Document.GetPositionInText(inStringPosition).inRowPosition;
-
-            Refresh();
-
-            //var position = Document.GetPositionInText(Mouse.GetPosition(this), LetterHeight, LetterWidth);
-
-            //var word = Document.GetWordOf(Document.Content.NodeAt(position.inStringPosition));
-
-            //HighlightBlock highlightBlock = new HighlightBlock
-            //{
-            //    Brush = Brushes.Red,
-            //    Start = word.start,
-            //    End = word.end,
-            //};
-
-            //Document.TextDecorations.Add(highlightBlock);
         }
+
+
+
 
 
         protected override void OnGotFocus(RoutedEventArgs e)
@@ -291,6 +307,97 @@ namespace ScriptEditor
 
         }
 
+
+
+        #region Input
+
+        private void ClearSelection()
+        {
+            isSelected = false;
+        }
+
+        private void ClearSelectionHighlighting()
+        {
+            Document.TextLookBlocks.RemoveAll(n => n.Tags.Contains("selection"));
+        }
+
+        private void SelectText(int oldPosition, int newPosition)
+        {
+            if (isSelected)
+            {
+                selectionPosition.end = newPosition;
+            }
+            else
+            {
+                selectionPosition = (oldPosition, newPosition);
+            }
+
+            var sortedSelection = selectionPosition.start < selectionPosition.end ?
+                    (selectionPosition.start, selectionPosition.end-1) :
+                    (selectionPosition.end, selectionPosition.start-1);
+
+            isSelected = true;
+            Document.ApplyHighlight(new[] { sortedSelection }, SelectionTags, SelectionBrush);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (isMouseDown)
+            {
+                isMouseHeld = true;
+            }
+
+            if (isMouseHeld)
+            {
+                ClearSelectionHighlighting();
+
+                MoveCaretToMousePosition();
+
+                SelectText(oldCaretInStringPosition, GetCaretInStringPosition());
+
+                Refresh();
+            }
+
+        }
+
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            isMouseDown = true;
+
+            ClearSelectionHighlighting();
+
+            Focus();
+
+            Caret.SetColor(false);
+
+            // First focus is important to keep.
+            ShouldKeepFocusOnce = true;
+
+            var (point, inStringPosition) = GetAppropriateCaretPosition(Mouse.GetPosition(this));
+
+            MoveCaret(inStringPosition);
+
+            if (Keyboard.Modifiers == ModifierKeys.Shift)
+            {
+                SelectText(oldCaretInStringPosition, GetCaretInStringPosition());
+            }
+            else
+            {
+                ClearSelection();
+            }
+
+            oldCaretInStringPosition = GetCaretInStringPosition();
+
+            Refresh();
+
+        }
+
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            isMouseDown = false;
+            isMouseHeld = false;
+        }
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             bool upperMode = false;
@@ -305,7 +412,6 @@ namespace ScriptEditor
                 isShifted = true;
             if (Keyboard.Modifiers == ModifierKeys.Control)
                 isControled = true;
-
             if (!isControled)
             {
                 ProcessSimpleKeys(e.Key, upperMode, isShifted);
@@ -521,8 +627,7 @@ namespace ScriptEditor
                         {
                             Caret.Position = Caret.Position.Next;
                         }
-
-                        var newPos = Document.GetPositionInText(Caret.Position);
+                     var newPos = Document.GetPositionInText(Caret.Position);
 
                         desiredInRowPosition = newPos.inRowPosition;
 
@@ -639,6 +744,11 @@ namespace ScriptEditor
             void putChar() => PutChar(ch);
         }
 
+        #endregion
+
+
+
+        #region Render
 
         private void PrintLetter(
             HighlightBlock highlightBlock, 
@@ -691,11 +801,8 @@ namespace ScriptEditor
             }
         }
 
-        protected override void OnRender(DrawingContext drawingContext)
+        private void PrintText(DrawingContext drawingContext)
         {
-            // Fill background
-            drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
-
             // Get blocks.
             var highlightBlocks =
                 Block.DistinctDecorations<HighlightBlock>(Document);
@@ -704,59 +811,32 @@ namespace ScriptEditor
                 Block.DistinctDecorations<TextColorBlock>(Document);
 
             PrintText(highlightBlocks, textColorBlocks, drawingContext);
+        }
 
-            //// Highlight text.
-            //foreach (var highlight in Document.TextLookBlocks.OfType<HighlightBlock>())
-            //{
-            //    highlight.OnRender(this, drawingContext);
-            //}
-
+        private void UpdateElementSize()
+        {
             FormattedText ft2 = GetFormattedText(Document.Text);
 
             // Set new width and height
             Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
             Height = ft2.Height + whiteSpaceOnTheBottom;
+        }
 
+        protected override void OnRender(DrawingContext drawingContext)
+        {
+            // Fill background
+            drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
 
-            //if(Height < ScrollViewer.ViewportHeight)
-            //    Height = ScrollViewer.ViewportHeight;
+            PrintText(drawingContext);
 
-            //// Draw text
-            //drawingContext.DrawText(ft2, new Point(0, 0));
+            UpdateElementSize();
 
             // Draw border
             drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
 
         }
 
+        #endregion
 
-        //protected override void OnRender(DrawingContext drawingContext)
-        //{
-        //    // Fill background
-        //    drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
-
-
-        //    // Highlight text.
-        //    foreach (var highlight in Document.TextLookBlocks.OfType<HighlightBlock>())
-        //    {
-        //        highlight.OnRender(this, drawingContext);
-        //    }
-
-        //    FormattedText ft2 = GetFormattedText(Document.Text);
-
-        //    // Set new width and height
-        //    Width = ft2.WidthIncludingTrailingWhitespace + whiteSpaceOnTheRight;
-        //    Height = ft2.Height + whiteSpaceOnTheBottom;
-
-        //    //if(Height < ScrollViewer.ViewportHeight)
-        //    //    Height = ScrollViewer.ViewportHeight;
-
-        //    // Draw text
-        //    drawingContext.DrawText(ft2, new Point(0, 0));
-
-        //    // Draw border
-        //    drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
-
-        //}
     }
 }

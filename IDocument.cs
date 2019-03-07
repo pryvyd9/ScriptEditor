@@ -44,7 +44,7 @@ namespace ScriptEditor
         void ApplyTextColor((int start, int end)[] ranges, string[] tags, Brush brush);
 
 
-        (int start, int end)[] SelectAll(string substring, int startIndex, int endIndex);
+        (int start, int end)[] FindAll(string substring, int startIndex, int endIndex);
     }
 
 

@@ -92,9 +92,65 @@ namespace ScriptEditor
                 result = proxiedMethod.Invoke(this, args);
                 return true;
             }
+            else
+            {
+                var originalMethod = origin.GetType().GetMethods().SingleOrDefault(n =>
+                {
+                    var nn = n.Name == binder.Name;
 
-            result = null;
-            return false;
+                    if (nn)
+                    {
+                        var aargs = args.Select((m,i) => m?.GetType()).ToArray();
+                        //var aargs = args.Select((m,i) => m?.GetType() ?? n.GetParameters().Select(k => k.ParameterType).ElementAt(i)).ToArray();
+                        var targs = n.GetParameters().Select(m => m.ParameterType).ToArray();
+
+                        if (aargs.Length != targs.Length)
+                        {
+                            return false;
+                        }
+
+                        for (int i = 0; i < aargs.Length; i++)
+                        {
+                            var isAssignable = targs[i].IsAssignableFrom(aargs[i]);
+                            var isOptional = n.GetParameters().ElementAt(i).IsOptional;
+
+                            if (aargs[i] == null && isOptional)
+                            {
+                                continue;
+                            }
+                            else if (!isAssignable)
+                            {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                   
+                    //return
+                    //    n.Name == binder.Name &&
+                    //    args.Select(m => m.GetType()).SequenceEqual(n.GetParameters().Select(m => m.GetType()));
+                });
+
+                if (originalMethod != null)
+                {
+                    
+                    //var newArgs = args.Select(n => n is null ? Type.Missing : n).ToArray();
+                    //result = originalMethod.Invoke(this, newArgs);
+                    result = originalMethod.Invoke(origin, args);
+                    return true;
+                }
+                else
+                {
+                    result = null;
+                    return false;
+                }
+            }
+
+            
         }
 
 

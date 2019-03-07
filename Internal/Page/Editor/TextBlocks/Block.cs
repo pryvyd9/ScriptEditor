@@ -16,6 +16,7 @@ namespace ScriptEditor
 
         private static readonly List<string> decorationPriorityTable = new List<string>
         {
+            "selection",
             "reserved-keywords",
             "lexical",
             "syntax",
