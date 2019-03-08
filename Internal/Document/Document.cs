@@ -254,7 +254,9 @@ namespace ScriptEditor
             {
                 var line = Lines.First(n => n.Start == position);
 
-                changes.Add(new MoveLineStart(line, position, position.Previous));
+                var index = Content.IndexOf(position);
+
+                changes.Add(new MoveLineStart(line, Content.IndexOf(position), index - 1));
 
                 line.Start = position.Previous;
             }
@@ -266,6 +268,22 @@ namespace ScriptEditor
             Insert(Content.NodeAt(inStringPosition), ch);
         }
 
+
+        public void Delete(int left, int right)
+        {
+            var nodesToDelete = Content.NodeAt(left).GetRangeNodes(right - left);
+
+            Delete(nodesToDelete);
+
+            //for (int i = left; i <= right; i++)
+            //{
+            //    var ch = Content.NodeAt(left);
+
+            //    Delete(ch);
+            //}
+        }
+
+
         public void Delete(int inStringPosition)
         {
             Delete(Content.NodeAt(inStringPosition));
@@ -273,26 +291,112 @@ namespace ScriptEditor
 
         public void Delete(IEnumerable<LinkedListNode<char>> nodes)
         {
-            if(nodes.Select(n=>n.Value).ToStr() == LineEnding)
-            {
-                var firstLine = Lines.First(n => n.End == nodes.Last());
+            var str = nodes.Select(n => n.Value).ToStr();
 
-                if(Lines.IndexOf(firstLine) + 1 == Lines.Count)
+            var secondLinesFromMerging = new List<Line>();
+
+            if (str.Contains(LineEnding))
+            {
+                while (!string.IsNullOrEmpty(str))
                 {
-                    return;
+                    var index = str.IndexOf(LineEnding);
+
+                    if (index == -1)
+                    {
+                        foreach (var node in nodes)
+                        {
+                            Delete(node, secondLinesFromMerging);
+                            //Delete(node);
+                        }
+                        break;
+                    }
+                    else if (index == 0)
+                    {
+                        index = LineEnding.Length - 1;
+
+                        var firstLine = Lines.First(n => n.End == nodes.ElementAt(index));
+
+                        if (Lines.IndexOf(firstLine) + 1 == Lines.Count)
+                        {
+                            return;
+                        }
+
+                        var secondLine = Lines[Lines.IndexOf(firstLine) + 1];
+
+                        MergeLines(firstLine, secondLine);
+
+                        secondLinesFromMerging.Add(secondLine);
+
+                        str = str.Skip(LineEnding.Length).ToStr();
+                        nodes = nodes.Skip(LineEnding.Length);
+                    }
+                    else
+                    {
+                        foreach (var node in nodes.Take(index))
+                        {
+                            Delete(node, secondLinesFromMerging);
+                            //Delete(node);
+                        }
+
+                        str = str.Skip(index).ToStr();
+                        nodes = nodes.Skip(index);
+                    }
+                   
                 }
-
-                var secondLine = Lines[Lines.IndexOf(firstLine) + 1];
-
-                MergeLines(firstLine, secondLine);
-
-                return;
             }
-
-            foreach (var node in nodes)
+            else
             {
-                Delete(node);
+
+                foreach (var node in nodes)
+                {
+                    Delete(node);
+                }
             }
+            //if (nodes.Select(n=>n.Value).ToStr() == LineEnding)
+            //{
+            //    var firstLine = Lines.First(n => n.End == nodes.Last());
+
+            //    if(Lines.IndexOf(firstLine) + 1 == Lines.Count)
+            //    {
+            //        return;
+            //    }
+
+            //    var secondLine = Lines[Lines.IndexOf(firstLine) + 1];
+
+            //    MergeLines(firstLine, secondLine);
+
+            //    return;
+            //}
+
+            //foreach (var node in nodes)
+            //{
+            //    Delete(node);
+            //}
+        }
+
+        private void Delete(LinkedListNode<char> node, IEnumerable<Line> secondLinesFromMerging)
+        {
+
+            var lines = Lines.Concat(secondLinesFromMerging);
+            var c = lines.Count(n => n.Start == node);
+            if (lines.Any(n => n.Start == node))
+            {
+                var line = lines.First(n => n.Start == node);
+                var index = Content.IndexOf(line.Start);
+
+                changes.Add(new MoveLineStart(line, index, index + 1));
+                line.Start = node.Next;
+            }
+            else if (lines.Any(n => n.End == node))
+            {
+                //lines.First(n => n.End == node).End = node.Previous;           
+                var line = lines.First(n => n.End == node);
+                //changes.Add(new MoveLineEnd(line, line.End, node.Previous));
+                line.End = node.Previous;
+            }
+            changes.Add(new Delete(node.Value, Content.IndexOf(node)));
+
+            Content.Remove(node);
         }
 
         public void Delete(LinkedListNode<char> node)

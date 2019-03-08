@@ -60,6 +60,11 @@ namespace ScriptEditor
 
         private int oldCaretInStringPosition;
         private (int start, int end) selectionPosition;
+        private (int left, int right) SelectionRange =>
+            selectionPosition.start < selectionPosition.end ?
+                    (selectionPosition.start, selectionPosition.end - 1) :
+                    (selectionPosition.end, selectionPosition.start - 1);
+
         private bool isSelected;
 
 
@@ -193,6 +198,10 @@ namespace ScriptEditor
             return Document.Content.IndexOf(Caret.Position);
         }
 
+        private void UpdateCaretInStringPosition()
+        {
+            oldCaretInStringPosition = GetCaretInStringPosition();
+        }
 
         private (int firstLine, int lastLine, int firstColumn, int lastColumn)
             GetVisibleContent()
@@ -332,12 +341,8 @@ namespace ScriptEditor
                 selectionPosition = (oldPosition, newPosition);
             }
 
-            var sortedSelection = selectionPosition.start < selectionPosition.end ?
-                    (selectionPosition.start, selectionPosition.end-1) :
-                    (selectionPosition.end, selectionPosition.start-1);
-
             isSelected = true;
-            Document.ApplyHighlight(new[] { sortedSelection }, SelectionTags, SelectionBrush);
+            Document.ApplyHighlight(new[] { SelectionRange }, SelectionTags, SelectionBrush);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -386,7 +391,7 @@ namespace ScriptEditor
                 ClearSelection();
             }
 
-            oldCaretInStringPosition = GetCaretInStringPosition();
+            UpdateCaretInStringPosition();
 
             Refresh();
 
@@ -420,6 +425,16 @@ namespace ScriptEditor
             ProcessSpecialKeys(e.Key, upperMode, isShifted, isControled);
 
             return;
+        }
+
+        private void DeleteSelected()
+        {
+            Document.Delete(SelectionRange.left, SelectionRange.right + 1);
+
+            ClearSelectionHighlighting();
+            ClearSelection();
+
+            oldCaretInStringPosition = GetCaretInStringPosition();
         }
 
         private void PutChar(char ch)
@@ -491,6 +506,8 @@ namespace ScriptEditor
                     {
                         Document.RollbackChanges();
 
+                        UpdateCaretInStringPosition();
+
                         Refresh();
                     }
                     return;
@@ -532,18 +549,27 @@ namespace ScriptEditor
                         if (Caret.Position.Previous == null)
                             return;
 
-                        IEnumerable<LinkedListNode<char>> nodesToDelete;
-
-                        if (Document.LineEnding.Contains(Caret.Position.Previous.Value))
+                        if (isSelected)
                         {
-                            nodesToDelete = Caret.Position.Previous.GetRangeNodes(-Document.LineEnding.Length);
+                            DeleteSelected();
                         }
                         else
                         {
-                            nodesToDelete = new[] { Caret.Position.Previous };
+                            IEnumerable<LinkedListNode<char>> nodesToDelete;
+
+                            if (Document.LineEnding.Contains(Caret.Position.Previous.Value))
+                            {
+                                nodesToDelete = Caret.Position.Previous.GetRangeNodes(-Document.LineEnding.Length);
+                            }
+                            else
+                            {
+                                nodesToDelete = new[] { Caret.Position.Previous };
+                            }
+
+                            Document.Delete(nodesToDelete);
                         }
 
-                        Document.Delete(nodesToDelete);
+                        UpdateCaretInStringPosition();
 
                         Refresh();
 
@@ -554,23 +580,32 @@ namespace ScriptEditor
                         if (Caret.Position.Next == null)
                             return;
 
-                        var posToDelete = Document.GetPositionInText(Caret.Position).inStringPosition;
-
-                        IEnumerable<LinkedListNode<char>> nodesToDelete;
-
-                        if (Document.LineEnding.Contains(Caret.Position.Next.Value))
+                        if (isSelected)
                         {
-                            nodesToDelete = Caret.Position.GetRangeNodes(Document.LineEnding.Length);
-
+                            DeleteSelected();
                         }
                         else
                         {
-                            nodesToDelete = new[] { Caret.Position };
+                            var posToDelete = Document.GetPositionInText(Caret.Position).inStringPosition;
+
+                            IEnumerable<LinkedListNode<char>> nodesToDelete;
+
+                            if (Document.LineEnding.Contains(Caret.Position.Value))
+                            {
+                                nodesToDelete = Caret.Position.GetRangeNodes(Document.LineEnding.Length);
+                            }
+                            else
+                            {
+                                nodesToDelete = new[] { Caret.Position };
+                            }
+
+                            Document.Delete(nodesToDelete);
+
+                            Caret.Position = Document.Content.NodeAt(posToDelete);
                         }
 
-                        Document.Delete(nodesToDelete);
+                        UpdateCaretInStringPosition();
 
-                        Caret.Position = Document.Content.NodeAt(posToDelete);
 
                         Refresh();
 
@@ -578,6 +613,9 @@ namespace ScriptEditor
                     }
                 case Key.Left:
                     {
+                        ClearSelectionHighlighting();
+                        ClearSelection();
+
                         // If start of file then do nothing
                         if (Caret.Position.Previous == null)
                         {
@@ -609,6 +647,9 @@ namespace ScriptEditor
                     }
                 case Key.Right:
                     {
+                        ClearSelectionHighlighting();
+                        ClearSelection();
+
                         // If end of file then do nothing
                         if (Caret.Position.Next.Next == null)
                         {
@@ -627,7 +668,7 @@ namespace ScriptEditor
                         {
                             Caret.Position = Caret.Position.Next;
                         }
-                     var newPos = Document.GetPositionInText(Caret.Position);
+                        var newPos = Document.GetPositionInText(Caret.Position);
 
                         desiredInRowPosition = newPos.inRowPosition;
 
@@ -639,6 +680,9 @@ namespace ScriptEditor
                     }
                 case Key.Up:
                     {
+                        ClearSelectionHighlighting();
+                        ClearSelection();
+
                         var pos = Document.GetPositionInText(Caret.Position);
 
                         ShouldKeepFocusOnce = true;
@@ -667,6 +711,9 @@ namespace ScriptEditor
                     }
                 case Key.Down:
                     {
+                        ClearSelectionHighlighting();
+                        ClearSelection();
+
                         var pos = Document.GetPositionInText(Caret.Position);
 
                         ShouldKeepFocusOnce = true;

@@ -28,6 +28,7 @@ namespace ScriptEditor
         void Delete(int inStringPosition);
         void Delete(IEnumerable<LinkedListNode<char>> nodes);
         void Delete(LinkedListNode<char> node);
+        void Delete(int left, int right);
 
         void BreakLine(Line line, LinkedListNode<char> position);
 
