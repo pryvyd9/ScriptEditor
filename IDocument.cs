@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Media;
 
 
 namespace ScriptEditor
@@ -9,21 +10,29 @@ namespace ScriptEditor
     {
         ObservableLinkedList<char> Content { get; }
         ObservableCollection<Line> Lines { get; }
-        List<TextDecorationBlock> TextDecorations { get; }
+        List<TextLookBlock> TextLookBlocks { get; }
         char[] InvisibleCharacters { get; }
         string LineEnding { get; }
         string Text { get; }
+        string Name { get; }
+        string Path { get; }
         bool IsRevertingChanges { get; }
 
 
 
-        void Insert(LinkedListNode<char> position, IEnumerable<char> collection);
+        void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch);
+        void Replace(IEnumerable<LinkedListNode<char>> nodes, IEnumerable<char> collection);
+
+        void InsertLineAfter(Line line, IEnumerable<char> collection);
+
+        void Insert(LinkedListNode<char> position, IEnumerable<char> collection, bool shouldBreakLines = true);
         void Insert(LinkedListNode<char> position, char ch);
         void Insert(int inStringPosition, char ch);
 
         void Delete(int inStringPosition);
         void Delete(IEnumerable<LinkedListNode<char>> nodes);
         void Delete(LinkedListNode<char> node);
+        void Delete(int left, int right);
 
         void BreakLine(Line line, LinkedListNode<char> position);
 
@@ -33,7 +42,18 @@ namespace ScriptEditor
         (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node);
         Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth);
 
+
+        IEnumerable<LinkedListNode<char>> GetRange(int left, int right);
+
+
         void RollbackChanges();
+
+
+        void ApplyHighlight((int start, int end)[] ranges, string[] tags, Brush brush, Pen pen = null);
+        void ApplyTextColor((int start, int end)[] ranges, string[] tags, Brush brush);
+
+
+        (int start, int end)[] FindAll(string substring, int startIndex, int endIndex);
     }
 
 

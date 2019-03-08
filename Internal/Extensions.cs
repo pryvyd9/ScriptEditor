@@ -118,7 +118,7 @@ namespace ScriptEditor
         {
             LinkedListNode<T> current = list.First;
 
-            for(int i = 0; current.Next != null; i++, current = current.Next)
+            for(int i = 0; current != null; i++, current = current.Next)
             {
                 if(current == node)
                 {

@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 
 
 namespace ScriptEditor
 {
-    public delegate void DocumentUpdatedEventHandler();
+    public delegate void DocumentUpdatedEventHandler(IDocument document);
 
 
     public class Document : IDocument
@@ -17,12 +18,14 @@ namespace ScriptEditor
 
         public ObservableCollection<Line> Lines { get; } = new ObservableCollection<Line>();
 
-        public List<TextDecorationBlock> TextDecorations { get; } = new List<TextDecorationBlock>();
+        public List<TextLookBlock> TextLookBlocks { get; } = new List<TextLookBlock>();
 
         public string Text => new string(Content.ToArray());
 
+        public string Name { get; set; } = "noname";
 
-        
+        public string Path { get; set; } = string.Empty;
+
 
 
         public string LineEnding { get; } = "\r\n";
@@ -230,12 +233,97 @@ namespace ScriptEditor
         }
 
 
-
-        public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
+        public IEnumerable<LinkedListNode<char>> GetRange(int left, int right)
         {
-            foreach (var item in collection)
+            return Content.NodeAt(left).GetRangeNodes(right - left);
+        }
+
+
+        #region Edit
+
+        public void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch)
+        {
+            var posToInsert = Content.IndexOf(nodes.First());
+
+            Delete(nodes);
+
+            var posToInsertNode = Content.NodeAt(posToInsert);
+
+            Insert(posToInsertNode, ch);
+        }
+
+        public void Replace(IEnumerable<LinkedListNode<char>> nodes, IEnumerable<char> collection)
+        {
+            var posToInsert = Content.IndexOf(nodes.First());
+
+            Delete(nodes);
+
+            var posToInsertNode = Content.NodeAt(posToInsert);
+
+            Insert(posToInsertNode, collection);
+        }
+
+
+        public void InsertLineAfter(Line line, IEnumerable<char> collection)
+        {
+            BreakLine(line, line.End.Previous);
+
+            var newLine = Lines[Lines.IndexOf(line) + 1];
+
+            var strWithoutLineEnding = collection.Take(collection.Count() - LineEnding.Length);
+
+            Insert(newLine.Start, strWithoutLineEnding);
+        }
+
+
+        public void Insert(LinkedListNode<char> position, IEnumerable<char> collection, bool shouldBreakLines = true)
+        {
+            var str = collection.ToStr();
+
+            if (shouldBreakLines && str.Contains(LineEnding))
             {
-                Insert(position, item);
+                while (!string.IsNullOrEmpty(str))
+                {
+                    var index = str.IndexOf(LineEnding);
+
+                    if (index == -1)
+                    {
+                        foreach (var item in collection)
+                        {
+                            Insert(position, item);
+                        }
+
+                        break;
+                    }
+                    else if (index == 0)
+                    {
+                        var pos = GetPositionInText(position);
+
+                        var lineToBreak = Lines[pos.row];
+
+                        BreakLine(lineToBreak, position);
+
+                        str = str.Substring(LineEnding.Length);
+                        collection = collection.Skip(LineEnding.Length);
+                    }
+                    else
+                    {
+                        foreach (var item in collection.Take(index))
+                        {
+                            Insert(position, item);
+                        }
+
+                        str = str.Substring(index);
+                        collection = collection.Skip(index);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var item in collection)
+                {
+                    Insert(position, item);
+                }
             }
         }
 
@@ -250,7 +338,9 @@ namespace ScriptEditor
             {
                 var line = Lines.First(n => n.Start == position);
 
-                changes.Add(new LineStart(line, position, position.Previous));
+                var index = Content.IndexOf(position);
+
+                changes.Add(new MoveLineStart(line, Content.IndexOf(position), index - 1));
 
                 line.Start = position.Previous;
             }
@@ -262,6 +352,15 @@ namespace ScriptEditor
             Insert(Content.NodeAt(inStringPosition), ch);
         }
 
+
+
+        public void Delete(int left, int right)
+        {
+            var nodesToDelete = GetRange(left, right);
+
+            Delete(nodesToDelete);
+        }
+
         public void Delete(int inStringPosition)
         {
             Delete(Content.NodeAt(inStringPosition));
@@ -269,26 +368,88 @@ namespace ScriptEditor
 
         public void Delete(IEnumerable<LinkedListNode<char>> nodes)
         {
-            if(nodes.Select(n=>n.Value).ToStr() == LineEnding)
-            {
-                var firstLine = Lines.First(n => n.End == nodes.Last());
+            var str = nodes.Select(n => n.Value).ToStr();
 
-                if(Lines.IndexOf(firstLine) + 1 == Lines.Count)
+            var secondLinesFromMerging = new List<Line>();
+
+            if (str.Contains(LineEnding))
+            {
+                while (!string.IsNullOrEmpty(str))
                 {
-                    return;
+                    var index = str.IndexOf(LineEnding);
+
+                    if (index == -1)
+                    {
+                        foreach (var node in nodes)
+                        {
+                            Delete(node, secondLinesFromMerging);
+                        }
+
+                        break;
+                    }
+                    else if (index == 0)
+                    {
+                        index = LineEnding.Length - 1;
+
+                        var firstLine = Lines.First(n => n.End == nodes.ElementAt(index));
+
+                        if (Lines.IndexOf(firstLine) + 1 == Lines.Count)
+                        {
+                            return;
+                        }
+
+                        var secondLine = Lines[Lines.IndexOf(firstLine) + 1];
+
+                        MergeLines(firstLine, secondLine);
+
+                        secondLinesFromMerging.Add(secondLine);
+
+                        str = str.Skip(LineEnding.Length).ToStr();
+                        nodes = nodes.Skip(LineEnding.Length);
+                    }
+                    else
+                    {
+                        foreach (var node in nodes.Take(index))
+                        {
+                            Delete(node, secondLinesFromMerging);
+                        }
+
+                        str = str.Skip(index).ToStr();
+                        nodes = nodes.Skip(index);
+                    }
                 }
-
-                var secondLine = Lines[Lines.IndexOf(firstLine) + 1];
-
-                MergeLines(firstLine, secondLine);
-
-                return;
             }
-
-            foreach (var node in nodes)
+            else
             {
-                Delete(node);
+                foreach (var node in nodes)
+                {
+                    Delete(node);
+                }
             }
+        }
+
+        private void Delete(LinkedListNode<char> node, IEnumerable<Line> secondLinesFromMerging)
+        {
+
+            var lines = Lines.Concat(secondLinesFromMerging);
+            var c = lines.Count(n => n.Start == node);
+            if (lines.Any(n => n.Start == node))
+            {
+                var line = lines.First(n => n.Start == node);
+                var index = Content.IndexOf(line.Start);
+
+                changes.Add(new MoveLineStart(line, index, index + 1));
+                line.Start = node.Next;
+            }
+            else if (lines.Any(n => n.End == node))
+            {
+                throw new Exception("is this place even reachable?");
+                var line = lines.First(n => n.End == node);
+                line.End = node.Previous;
+            }
+            changes.Add(new Delete(node.Value, Content.IndexOf(node)));
+
+            Content.Remove(node);
         }
 
         public void Delete(LinkedListNode<char> node)
@@ -308,6 +469,7 @@ namespace ScriptEditor
         }
 
 
+
         public void BreakLine(Line line, LinkedListNode<char> position)
         {
             Line newLine = new Line
@@ -318,7 +480,7 @@ namespace ScriptEditor
 
             Lines.Insert(Lines.IndexOf(line) + 1, newLine);
 
-            Insert(position, "\r\n");
+            Insert(position, "\r\n", false);
 
             // If line is empty then start is the first in newLine.
             if(line.Start == newLine.Start)
@@ -357,7 +519,7 @@ namespace ScriptEditor
         {
             changes.Commit();
 
-            Updated?.Invoke();
+            Updated?.Invoke(this);
         }
 
         public void RollbackChanges()
@@ -365,9 +527,87 @@ namespace ScriptEditor
             changes.RollBack();
         }
 
+        #endregion
+
+        #region Format
+
+        public void ResetFormat()
+        {
+            TextLookBlocks.Clear();
+        }
+
+        public void ApplyHighlight((int start, int end)[] ranges, string[] tags, Brush brush, Pen pen = null)
+        {
+            foreach (var range in ranges)
+            {
+                // If selection is reversed then it means that 
+                // selection is empty. Ignore this range.
+                if (range.end < range.start)
+                {
+                    continue;
+                }
+
+                var t = new HighlightBlock
+                {
+                    Start = Content.NodeAt(range.start),
+                    End = Content.NodeAt(range.end),
+                    Brush = brush,
+                    Pen = pen,
+                    Tags = tags,
+                };
+
+                TextLookBlocks.Add(t);
+            }
+        }
+
+        public void ApplyTextColor((int start, int end)[] ranges, string[] tags, Brush brush)
+        {
+            foreach (var range in ranges)
+            {
+                var t = new TextColorBlock
+                {
+                    Start = Content.NodeAt(range.start),
+                    End = Content.NodeAt(range.end),
+                    Brush = brush,
+                    Tags = tags,
+                };
+
+                TextLookBlocks.Add(t);
+            }
+        }
+
+        #endregion
 
 
+        public (int start, int end)[] FindAll(string substring, int startIndex, int endIndex)
+        {
+            var start = Content.NodeAt(startIndex);
+            var end = Content.NodeAt(endIndex);
 
+
+            var list = new List<(int start, int end)>();
+
+            for (int i = startIndex; ;)
+            {
+                var text = start.GetRange(end).ToStr();
+
+                var offset = text.IndexOf(substring);
+
+                if (offset == -1)
+                {
+                    break;
+                }
+
+                list.Add((i + offset, i + offset + substring.Length - 1));
+
+                start = start.GetAtOffset(offset + substring.Length);
+
+                i += offset + substring.Length;
+
+            }
+
+            return list.ToArray();
+        }
 
         private bool IsWhiteDelimiter(char ch)
         {

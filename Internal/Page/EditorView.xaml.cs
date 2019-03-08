@@ -54,16 +54,7 @@ namespace ScriptEditor
             editor.ScrollViewer.ScrollChanged += ScrollViewer_ScrollChanged;
             rowCounter.ScrollViewer.ScrollChanged += ScrollViewer_ScrollChanged;
 
-            //rowCounter.GotFocus += Separator_GotFocus;
-            separator.GotFocus += Separator_GotFocus;
-
             Bind();
-        }
-
-        private void Separator_GotFocus(object sender, RoutedEventArgs e)
-        {
-            separator.MoveFocus(new TraversalRequest(FocusNavigationDirection.Right));
-            //throw new NotImplementedException();
         }
 
         private void Bind()
@@ -106,16 +97,6 @@ namespace ScriptEditor
         private void UpdateRowCount()
         {
             rowCounter.Count = editor.Document.Lines.Count;
-
-            //var count = editor.Document.Lines.Count;
-            //var range = Enumerable.Range(1, count);
-            //var str = string.Join("\r\n", range);
-            //var doc = new Document(str);
-
-            //rowCounter.SetDocument(doc);
-
-            // Crutch to make it refresh!
-            //rowCounter.Height += 1e-10;
         }
 
         private void Lines_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
