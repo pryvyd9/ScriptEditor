@@ -57,6 +57,8 @@ namespace ScriptEditor
 
         private bool isMouseDown;
         private bool isMouseHeld;
+        private bool isLineSelected;
+
 
         private int oldCaretInStringPosition;
         private (int start, int end) selectionPosition;
@@ -320,9 +322,12 @@ namespace ScriptEditor
 
         #region Input
 
+        #region Selection
+
         private void ClearSelection()
         {
             isSelected = false;
+            //isLineSelected = false;
         }
 
         private void ClearSelectionHighlighting()
@@ -330,7 +335,7 @@ namespace ScriptEditor
             Document.TextLookBlocks.RemoveAll(n => n.Tags.Contains("selection"));
         }
 
-        private void SelectText(int oldPosition, int newPosition)
+        private void SelectAndHighlightText(int oldPosition, int newPosition)
         {
             if (isSelected)
             {
@@ -345,6 +350,62 @@ namespace ScriptEditor
             Document.ApplyHighlight(new[] { SelectionRange }, SelectionTags, SelectionBrush);
         }
 
+        private void SelectLine(int rowIndex)
+        {
+            var line = Document.Lines[rowIndex];
+
+            var start = Document.Content.IndexOf(line.Start);
+            var end = Document.Content.IndexOf(line.End) + 1;
+
+            SelectText(start, end);
+
+            isLineSelected = true;
+        }
+
+        private void SelectCurrentLine()
+        {
+            var position = Document.GetPositionInText(Caret.Position);
+
+            SelectLine(position.row);
+        }
+
+        private void SelectText(int oldPosition, int newPosition)
+        {
+
+            if (isSelected)
+            {
+                selectionPosition.end = newPosition;
+            }
+            else
+            {
+                selectionPosition = (oldPosition, newPosition);
+            }
+
+            isSelected = true;
+            isLineSelected = false;
+        }
+
+        private string GetSelectedText()
+        {
+            var start = Document.Content.NodeAt(SelectionRange.left);
+            var end = start.GetAtOffset(SelectionRange.right - SelectionRange.left);
+            var range = start.GetRange(end).ToStr();
+            return range;
+        }
+
+        private void DeleteSelected()
+        {
+            Document.Delete(SelectionRange.left, SelectionRange.right + 1);
+
+            ClearSelectionHighlighting();
+            ClearSelection();
+
+            oldCaretInStringPosition = GetCaretInStringPosition();
+        }
+
+        #endregion
+
+
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (isMouseDown)
@@ -358,7 +419,7 @@ namespace ScriptEditor
 
                 MoveCaretToMousePosition();
 
-                SelectText(oldCaretInStringPosition, GetCaretInStringPosition());
+                SelectAndHighlightText(oldCaretInStringPosition, GetCaretInStringPosition());
 
                 Refresh();
             }
@@ -384,7 +445,7 @@ namespace ScriptEditor
 
             if (Keyboard.Modifiers == ModifierKeys.Shift)
             {
-                SelectText(oldCaretInStringPosition, GetCaretInStringPosition());
+                SelectAndHighlightText(oldCaretInStringPosition, GetCaretInStringPosition());
             }
             else
             {
@@ -429,15 +490,8 @@ namespace ScriptEditor
 
 
 
-        private void DeleteSelected()
-        {
-            Document.Delete(SelectionRange.left, SelectionRange.right + 1);
 
-            ClearSelectionHighlighting();
-            ClearSelection();
 
-            oldCaretInStringPosition = GetCaretInStringPosition();
-        }
 
         private void PutChar(char ch)
         {
@@ -462,15 +516,26 @@ namespace ScriptEditor
                 var range = Document.GetRange(SelectionRange.left, SelectionRange.right + 1);
 
                 Document.Replace(range, str);
+
+                isSelected = false;
+            }
+            else if (isLineSelected)
+            {
+                var startPosition = Document.GetPositionInText(SelectionRange.left);
+
+                var line = Document.Lines[startPosition.row];
+
+                Document.InsertLineAfter(line, str);
             }
             else
             {
                 Document.Insert(Caret.Position, str);
             }
 
-
             Refresh();
         }
+
+
 
         private void ProcessSimpleKeys(Key key, bool upperMode, bool isShifted)
         {
@@ -542,11 +607,16 @@ namespace ScriptEditor
                 case Key.C:
                     if (isControled)
                     {
-                        var start = Document.Content.NodeAt(SelectionRange.left);
-                        var end = start.GetAtOffset(SelectionRange.right - SelectionRange.left);
-                        var range = start.GetRange(end).ToStr();
-
-                        Clipboard.SetText(range);
+                        if (isSelected)
+                        {
+                            Clipboard.SetText(GetSelectedText());
+                        }
+                        else
+                        {
+                            SelectCurrentLine();
+                            Clipboard.SetText(GetSelectedText());
+                            ClearSelection();
+                        }
                     }
                     return;
                 case Key.V:

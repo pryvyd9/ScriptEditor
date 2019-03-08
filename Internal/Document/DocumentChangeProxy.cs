@@ -19,6 +19,7 @@ namespace ScriptEditor
         {
             "Replace",
             "Insert",
+            "InsertLineAfter",
             "Delete",
             "BreakLine"
         };

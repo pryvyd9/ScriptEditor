@@ -23,7 +23,9 @@ namespace ScriptEditor
         void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch);
         void Replace(IEnumerable<LinkedListNode<char>> nodes, IEnumerable<char> collection);
 
-        void Insert(LinkedListNode<char> position, IEnumerable<char> collection);
+        void InsertLineAfter(Line line, IEnumerable<char> collection);
+
+        void Insert(LinkedListNode<char> position, IEnumerable<char> collection, bool shouldBreakLines = true);
         void Insert(LinkedListNode<char> position, char ch);
         void Insert(int inStringPosition, char ch);
 

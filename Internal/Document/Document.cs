@@ -264,11 +264,66 @@ namespace ScriptEditor
         }
 
 
-        public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
+        public void InsertLineAfter(Line line, IEnumerable<char> collection)
         {
-            foreach (var item in collection)
+            BreakLine(line, line.End.Previous);
+
+            var newLine = Lines[Lines.IndexOf(line) + 1];
+
+            var strWithoutLineEnding = collection.Take(collection.Count() - LineEnding.Length);
+
+            Insert(newLine.Start, strWithoutLineEnding);
+        }
+
+
+        public void Insert(LinkedListNode<char> position, IEnumerable<char> collection, bool shouldBreakLines = true)
+        {
+            var str = collection.ToStr();
+
+            if (shouldBreakLines && str.Contains(LineEnding))
             {
-                Insert(position, item);
+                while (!string.IsNullOrEmpty(str))
+                {
+                    var index = str.IndexOf(LineEnding);
+
+                    if (index == -1)
+                    {
+                        foreach (var item in collection)
+                        {
+                            Insert(position, item);
+                        }
+
+                        break;
+                    }
+                    else if (index == 0)
+                    {
+                        var pos = GetPositionInText(position);
+
+                        var lineToBreak = Lines[pos.row];
+
+                        BreakLine(lineToBreak, position);
+
+                        str = str.Substring(LineEnding.Length);
+                        collection = collection.Skip(LineEnding.Length);
+                    }
+                    else
+                    {
+                        foreach (var item in collection.Take(index))
+                        {
+                            Insert(position, item);
+                        }
+
+                        str = str.Substring(index);
+                        collection = collection.Skip(index);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var item in collection)
+                {
+                    Insert(position, item);
+                }
             }
         }
 
@@ -425,7 +480,7 @@ namespace ScriptEditor
 
             Lines.Insert(Lines.IndexOf(line) + 1, newLine);
 
-            Insert(position, "\r\n");
+            Insert(position, "\r\n", false);
 
             // If line is empty then start is the first in newLine.
             if(line.Start == newLine.Start)
@@ -485,6 +540,13 @@ namespace ScriptEditor
         {
             foreach (var range in ranges)
             {
+                // If selection is reversed then it means that 
+                // selection is empty. Ignore this range.
+                if (range.end < range.start)
+                {
+                    continue;
+                }
+
                 var t = new HighlightBlock
                 {
                     Start = Content.NodeAt(range.start),
