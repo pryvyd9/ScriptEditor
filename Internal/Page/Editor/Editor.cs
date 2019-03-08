@@ -483,7 +483,7 @@ namespace ScriptEditor
                 ProcessSimpleKeys(e.Key, upperMode, isShifted);
             }
 
-            ProcessSpecialKeys(e.Key, upperMode, isShifted, isControled);
+            ProcessSpecialKeys(e.Key, upperMode, isShifted, isControled, e);
 
             return;
         }
@@ -587,7 +587,12 @@ namespace ScriptEditor
 
         }
 
-        private void ProcessSpecialKeys(Key key, bool upperMode, bool isShifted, bool isControled)
+        private void ProcessSpecialKeys(
+            Key key,
+            bool upperMode,
+            bool isShifted,
+            bool isControled,
+            KeyEventArgs e)
         {
 
             char ch;
@@ -866,6 +871,8 @@ namespace ScriptEditor
 
                         Refresh();
 
+                        e.Handled = true;
+
                         return;
                     }
                 case Key.End:
@@ -879,6 +886,8 @@ namespace ScriptEditor
                         Caret.Position = Document.Content.NodeAt(newPos.inStringPosition);
 
                         Refresh();
+
+                        e.Handled = true;
 
                         return;
                     }
