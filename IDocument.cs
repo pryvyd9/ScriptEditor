@@ -20,6 +20,8 @@ namespace ScriptEditor
 
 
 
+        void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch);
+        void Replace(IEnumerable<LinkedListNode<char>> nodes, IEnumerable<char> collection);
 
         void Insert(LinkedListNode<char> position, IEnumerable<char> collection);
         void Insert(LinkedListNode<char> position, char ch);
@@ -37,6 +39,10 @@ namespace ScriptEditor
         (int inStringPosition, int row, int inRowPosition) GetPositionInText(int inStringPosition);
         (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node);
         Point GetPositionInText(LinkedListNode<char> node, double letterHeight, double letterWidth);
+
+
+        IEnumerable<LinkedListNode<char>> GetRange(int left, int right);
+
 
         void RollbackChanges();
 

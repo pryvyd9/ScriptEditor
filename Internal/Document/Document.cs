@@ -233,7 +233,36 @@ namespace ScriptEditor
         }
 
 
+        public IEnumerable<LinkedListNode<char>> GetRange(int left, int right)
+        {
+            return Content.NodeAt(left).GetRangeNodes(right - left);
+        }
+
+
         #region Edit
+
+        public void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch)
+        {
+            var posToInsert = Content.IndexOf(nodes.First());
+
+            Delete(nodes);
+
+            var posToInsertNode = Content.NodeAt(posToInsert);
+
+            Insert(posToInsertNode, ch);
+        }
+
+        public void Replace(IEnumerable<LinkedListNode<char>> nodes, IEnumerable<char> collection)
+        {
+            var posToInsert = Content.IndexOf(nodes.First());
+
+            Delete(nodes);
+
+            var posToInsertNode = Content.NodeAt(posToInsert);
+
+            Insert(posToInsertNode, collection);
+        }
+
 
         public void Insert(LinkedListNode<char> position, IEnumerable<char> collection)
         {
@@ -269,20 +298,13 @@ namespace ScriptEditor
         }
 
 
+
         public void Delete(int left, int right)
         {
-            var nodesToDelete = Content.NodeAt(left).GetRangeNodes(right - left);
+            var nodesToDelete = GetRange(left, right);
 
             Delete(nodesToDelete);
-
-            //for (int i = left; i <= right; i++)
-            //{
-            //    var ch = Content.NodeAt(left);
-
-            //    Delete(ch);
-            //}
         }
-
 
         public void Delete(int inStringPosition)
         {
@@ -306,8 +328,8 @@ namespace ScriptEditor
                         foreach (var node in nodes)
                         {
                             Delete(node, secondLinesFromMerging);
-                            //Delete(node);
                         }
+
                         break;
                     }
                     else if (index == 0)
@@ -335,43 +357,20 @@ namespace ScriptEditor
                         foreach (var node in nodes.Take(index))
                         {
                             Delete(node, secondLinesFromMerging);
-                            //Delete(node);
                         }
 
                         str = str.Skip(index).ToStr();
                         nodes = nodes.Skip(index);
                     }
-                   
                 }
             }
             else
             {
-
                 foreach (var node in nodes)
                 {
                     Delete(node);
                 }
             }
-            //if (nodes.Select(n=>n.Value).ToStr() == LineEnding)
-            //{
-            //    var firstLine = Lines.First(n => n.End == nodes.Last());
-
-            //    if(Lines.IndexOf(firstLine) + 1 == Lines.Count)
-            //    {
-            //        return;
-            //    }
-
-            //    var secondLine = Lines[Lines.IndexOf(firstLine) + 1];
-
-            //    MergeLines(firstLine, secondLine);
-
-            //    return;
-            //}
-
-            //foreach (var node in nodes)
-            //{
-            //    Delete(node);
-            //}
         }
 
         private void Delete(LinkedListNode<char> node, IEnumerable<Line> secondLinesFromMerging)
@@ -389,9 +388,8 @@ namespace ScriptEditor
             }
             else if (lines.Any(n => n.End == node))
             {
-                //lines.First(n => n.End == node).End = node.Previous;           
+                throw new Exception("is this place even reachable?");
                 var line = lines.First(n => n.End == node);
-                //changes.Add(new MoveLineEnd(line, line.End, node.Previous));
                 line.End = node.Previous;
             }
             changes.Add(new Delete(node.Value, Content.IndexOf(node)));
@@ -414,6 +412,7 @@ namespace ScriptEditor
 
             Content.Remove(node);
         }
+
 
 
         public void BreakLine(Line line, LinkedListNode<char> position)

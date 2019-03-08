@@ -17,6 +17,7 @@ namespace ScriptEditor
 
         private static readonly HashSet<string> CommitableMethods =new HashSet<string>
         {
+            "Replace",
             "Insert",
             "Delete",
             "BreakLine"

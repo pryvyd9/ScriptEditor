@@ -52,26 +52,6 @@ namespace ScriptEditor
         }
     }
 
-    //internal sealed class MoveLineStart : Change
-    //{
-    //    public Line Line { get; }
-
-    //    public LinkedListNode<char> From { get; }
-    //    public LinkedListNode<char> To { get; }
-
-    //    public MoveLineStart(Line line, LinkedListNode<char> from, LinkedListNode<char> to)
-    //    {
-    //        Line = line;
-    //        From = from;
-    //        To = to;
-    //    }
-
-    //    public override void Revert(Document document)
-    //    {
-    //        Line.Start = From;
-    //    }
-    //}
-
     internal sealed class MoveLineStart : Change
     {
         public Line Line { get; }
@@ -91,26 +71,6 @@ namespace ScriptEditor
             Line.Start = document.Content.NodeAt(From);
         }
     }
-
-    //internal sealed class MoveLineEnd : Change
-    //{
-    //    public Line Line { get; }
-
-    //    public LinkedListNode<char> From { get; }
-    //    public LinkedListNode<char> To { get; }
-
-    //    public MoveLineEnd(Line line, LinkedListNode<char> from, LinkedListNode<char> to)
-    //    {
-    //        Line = line;
-    //        From = from;
-    //        To = to;
-    //    }
-
-    //    public override void Revert(Document document)
-    //    {
-    //        Line.End = From;
-    //    }
-    //}
 
     internal sealed class LineBreak : Change
     {

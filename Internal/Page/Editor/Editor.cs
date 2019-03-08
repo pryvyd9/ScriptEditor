@@ -427,6 +427,8 @@ namespace ScriptEditor
             return;
         }
 
+
+
         private void DeleteSelected()
         {
             Document.Delete(SelectionRange.left, SelectionRange.right + 1);
@@ -439,7 +441,33 @@ namespace ScriptEditor
 
         private void PutChar(char ch)
         {
-            Document.Insert(Caret.Position, ch);
+            if (isSelected)
+            {
+                var range = Document.GetRange(SelectionRange.left, SelectionRange.right + 1);
+
+                Document.Replace(range, ch);
+            }
+            else
+            {
+                Document.Insert(Caret.Position, ch);
+            }
+
+            Refresh();
+        }
+
+        private void PutString(string str)
+        {
+            if (isSelected)
+            {
+                var range = Document.GetRange(SelectionRange.left, SelectionRange.right + 1);
+
+                Document.Replace(range, str);
+            }
+            else
+            {
+                Document.Insert(Caret.Position, str);
+            }
+
 
             Refresh();
         }
@@ -509,6 +537,22 @@ namespace ScriptEditor
                         UpdateCaretInStringPosition();
 
                         Refresh();
+                    }
+                    return;
+                case Key.C:
+                    if (isControled)
+                    {
+                        var start = Document.Content.NodeAt(SelectionRange.left);
+                        var end = start.GetAtOffset(SelectionRange.right - SelectionRange.left);
+                        var range = start.GetRange(end).ToStr();
+
+                        Clipboard.SetText(range);
+                    }
+                    return;
+                case Key.V:
+                    if (isControled)
+                    {
+                        PutString(Clipboard.GetText());
                     }
                     return;
                 case Key.Space:
