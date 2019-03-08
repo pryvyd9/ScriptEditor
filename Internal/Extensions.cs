@@ -24,9 +24,54 @@ namespace ScriptEditor
             }
         }
 
+        //private static LinkedListNode<T> GetAtOffsetForth<T>(LinkedListNode<T> node, int offset)
+        //{
+        //    var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        //    for (int i = 0; i < offset; ++i)
+        //    {
+        //        node = node.Next;
+        //    }
+        //    watch.Stop();
+        //    Console.WriteLine(watch.ElapsedMilliseconds);
+
+        //    return node;
+        //}
+
+        //private static LinkedListNode<T> GetAtOffsetBack<T>(LinkedListNode<T> node, int offset)
+        //{
+        //    var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        //    for (int i = 0; i > offset; --i)
+        //    {
+        //        node = node.Previous;
+        //    }
+        //    watch.Stop();
+
+        //    Console.WriteLine(watch.ElapsedMilliseconds);
+        //    return node;
+        //}
+
+        //public static LinkedListNode<T> GetAtOffset<T>(this LinkedListNode<T> start, int offset)
+        //{
+
+        //    if (offset == 0)
+        //    {
+        //        return start;
+        //    }
+        //    else if (offset < 0)
+        //    {
+        //        return GetAtOffsetBack(start, offset);
+        //    }
+        //    else
+        //    {
+        //        return GetAtOffsetForth(start, offset);
+        //    }
+        //}
+
         public static LinkedListNode<T> GetAtOffset<T>(this LinkedListNode<T> start, int offset)
         {
-            if(offset == 0)
+            if (offset == 0)
             {
                 return start;
             }
@@ -35,7 +80,7 @@ namespace ScriptEditor
 
             int step = offset < 0 ? -1 : 1;
 
-            for (int i = 0; offset < 0 ? i > offset : i < offset; i+=step)
+            for (int i = 0; offset < 0 ? i > offset : i < offset; i += step)
             {
                 temp = getNext();
             }

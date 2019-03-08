@@ -14,6 +14,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using static ScriptEditor.Tag;
+
 namespace ScriptEditor
 {
 
@@ -50,8 +52,8 @@ namespace ScriptEditor
 
 
 
-        public Brush SelectionBrush { get; set; } = Brushes.SkyBlue;
-        public string[] SelectionTags { get; set; } = new[] { "selection" };
+        public Brush SelectionBrush { get; set; }
+        public int[] SelectionTags { get; set; } = new[] { Selection };
 
 
 
@@ -61,8 +63,8 @@ namespace ScriptEditor
 
 
         private int oldCaretInStringPosition;
-        private (int start, int end) selectionPosition;
-        private (int left, int right) SelectionRange =>
+        public (int start, int end) selectionPosition;
+        public (int left, int right) SelectionRange =>
             selectionPosition.start < selectionPosition.end ?
                     (selectionPosition.start, selectionPosition.end - 1) :
                     (selectionPosition.end, selectionPosition.start - 1);
@@ -109,6 +111,13 @@ namespace ScriptEditor
             VerticalAlignment = VerticalAlignment.Top;
 
             Children.Add(Caret);
+
+
+
+            var color = Brushes.SkyBlue.Color;
+            color.A = 150;
+
+            SelectionBrush = new SolidColorBrush(color);
         }
 
 
@@ -332,7 +341,7 @@ namespace ScriptEditor
 
         private void ClearSelectionHighlighting()
         {
-            Document.TextLookBlocks.RemoveAll(n => n.Tags.Contains("selection"));
+            Document.TextLookBlocks.RemoveAll(n => n.Tags.Contains(Selection));
         }
 
         private void SelectAndHighlightText(int oldPosition, int newPosition)
@@ -920,68 +929,165 @@ namespace ScriptEditor
 
         #region Render
 
-        private void PrintLetter(
-            HighlightBlock highlightBlock, 
-            TextColorBlock textColorBlock,
-            DrawingContext drawingContext,
-            int inStringPosition)
+
+        private void RenderHighlight(HighlightBlock[] blocks, DrawingContext drawingContext)
         {
-            if (highlightBlock != null)
+            foreach (var block in blocks)
             {
-                highlightBlock.OnRender(this, drawingContext, inStringPosition);
+                var posStart = Document.GetPositionInText(block.Start);
+                var posEnd = Document.GetPositionInText(block.End);
+
+                // For some reason end is located one position behind
+                posEnd.inRowPosition++;
+                posEnd.inStringPosition++;
+
+                if (posEnd.row == posStart.row)
+                {
+                    var count = posEnd.inRowPosition - posStart.inRowPosition;
+                    block.RenderRange(this, drawingContext, posStart.row, posStart.inRowPosition, count);
+                }
+                else
+                {
+                    var rowCount = posEnd.row - posStart.row;
+
+                    int row = posStart.row;
+
+                    // First line
+                    {
+                        var line = Document.Lines[row];
+
+                        var lineEndPos = Document.GetPositionInText(line.End);
+
+                        var count = lineEndPos.inRowPosition - posStart.inRowPosition;
+
+                        block.RenderRange(this, drawingContext, posStart.row, posStart.inRowPosition, count);
+
+                        row++;
+                    }
+
+                    // Middle lines
+                    for ( ; row < posEnd.row; )
+                    {
+                        var line = Document.Lines[row];
+
+                        var lineStart = Document.GetPositionInText(line.Start);
+
+                        var count = line.Text.Length;
+
+                        block.RenderRange(this, drawingContext, lineStart.row, lineStart.inRowPosition, count);
+
+                        row++;
+                    }
+
+                    // Last line
+                    {
+                        var line = Document.Lines[row];
+
+                        var lineStartPos = Document.GetPositionInText(line.Start);
+
+                        var count = posEnd.inRowPosition - lineStartPos.inRowPosition;
+
+                        block.RenderRange(this, drawingContext, lineStartPos.row, lineStartPos.inRowPosition, count);
+                    }
+                }
             }
-
-            if (textColorBlock != null)
-            {
-                textColorBlock.OnRender(this, drawingContext, inStringPosition);
-            }
-            else
-            {
-                var startInfo = Document.GetPositionInText(inStringPosition);
-                //var endInfo = editor.Document.GetPositionInText(End);
-                var ch = Document.Content.NodeAt(inStringPosition).Value;
-
-                double left = startInfo.inRowPosition * LetterWidth;
-                double top = startInfo.row * LetterHeight;
-
-                var ft = new FormattedText(
-                    ch.ToString(),
-                    System.Globalization.CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight,
-                    Typeface,
-                    14.0,
-                    Brushes.Black,
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip
-                );
-
-                // Draw text
-                drawingContext.DrawText(ft, new Point(left, top));
-            }
-
         }
 
-        private void PrintText(
-            HighlightBlock[] highlightBlocks, 
-            TextColorBlock[] textColorBlocks,
-            DrawingContext drawingContext)
+        private void RenderTextColor(TextColorBlock[] blocks, DrawingContext drawingContext)
         {
-            for (int i = 0; i < Document.Text.Length; i++)
+            foreach (var block in blocks)
             {
-                PrintLetter(highlightBlocks[i], textColorBlocks[i], drawingContext, i);
+                var posStart = Document.GetPositionInText(block.Start);
+                var posEnd = Document.GetPositionInText(block.End);
+
+                // For some reason end is located one position behind
+                posEnd.inRowPosition++;
+                posEnd.inStringPosition++;
+
+                if (posEnd.row == posStart.row)
+                {
+                    block.RenderRange(this, drawingContext, block.Text, posStart.row, posStart.inRowPosition);
+                }
+                else
+                {
+                    var rowCount = posEnd.row - posStart.row;
+
+                    int row = posStart.row;
+
+                    // First line
+                    {
+                        var line = Document.Lines[row];
+
+                        var lineEndPos = Document.GetPositionInText(line.End);
+
+                        block.RenderRange(this, drawingContext, block.Start.GetRange(line.End).ToStr(), posStart.row, posStart.inRowPosition);
+
+                        row++;
+                    }
+
+                    // Middle lines
+                    for (; row < posEnd.row;)
+                    {
+                        var line = Document.Lines[row];
+
+                        var lineStart = Document.GetPositionInText(line.Start);
+
+                        block.RenderRange(this, drawingContext, line.Text, lineStart.row, lineStart.inRowPosition);
+
+                        row++;
+                    }
+
+                    // Last line
+                    {
+                        var line = Document.Lines[row];
+
+                        var lineStartPos = Document.GetPositionInText(line.Start);
+
+                        var count = posEnd.inRowPosition - lineStartPos.inRowPosition;
+
+                        block.RenderRange(this, drawingContext, line.Start.GetRange(block.End).ToStr(), lineStartPos.row, lineStartPos.inRowPosition);
+                    }
+                }
             }
+        }
+
+
+        private void RenderText(DrawingContext drawingContext)
+        {
+            var ft = new FormattedText(
+                Document.Text,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                Typeface,
+                14.0,
+                Brushes.Black,
+                VisualTreeHelper.GetDpi(this).PixelsPerDip
+            );
+
+            // Draw text
+            drawingContext.DrawText(ft, new Point(0, 0));
         }
 
         private void PrintText(DrawingContext drawingContext)
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
             // Get blocks.
             var highlightBlocks =
-                Block.DistinctDecorations<HighlightBlock>(Document);
+                Block.GetDecorations<HighlightBlock>(Document);
 
+            RenderHighlight(highlightBlocks, drawingContext);
+
+            RenderText(drawingContext);
             var textColorBlocks =
-                Block.DistinctDecorations<TextColorBlock>(Document);
+                Block.GetDecorations<TextColorBlock>(Document);
 
-            PrintText(highlightBlocks, textColorBlocks, drawingContext);
+            RenderTextColor(textColorBlocks, drawingContext);
+
+            Console.WriteLine(watch.ElapsedMilliseconds);
+
         }
+
 
         private void UpdateElementSize()
         {
@@ -994,6 +1100,8 @@ namespace ScriptEditor
 
         protected override void OnRender(DrawingContext drawingContext)
         {
+            Console.WriteLine("---------------------start----------------------");
+
             // Fill background
             drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
 
@@ -1003,6 +1111,8 @@ namespace ScriptEditor
 
             // Draw border
             drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
+
+            Console.WriteLine("---------------------end----------------------");
 
         }
 

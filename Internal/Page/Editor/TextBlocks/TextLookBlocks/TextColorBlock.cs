@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Media;
+using System.Linq;
 
 namespace ScriptEditor
 {
@@ -37,6 +38,43 @@ namespace ScriptEditor
 
         //    //drawingContext.DrawRectangle(Brush, Pen, new Rect(left, top, width, height));
         //}
+        
+
+
+        public void RenderRange(Editor editor, DrawingContext drawingContext, string str, int row, int inRowPosition)
+        {
+            double left = inRowPosition * editor.LetterWidth;
+            double top = row * editor.LetterHeight;
+
+            //var isSelection = Tags.Contains("selection");
+
+            //if (isSelection)
+            //{
+            //    var poss = editor.Document.GetPositionInText(editor.SelectionRange.left);
+            //    left = poss.inRowPosition * editor.LetterWidth;
+            //}
+
+            var ft = new FormattedText(
+                str,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                editor.Typeface,
+                14.0,
+                Brush,
+                VisualTreeHelper.GetDpi(editor).PixelsPerDip
+            );
+
+            // Draw text
+            drawingContext.DrawText(ft, new Point(left, top));
+
+            //double right = (endInfo.inRowPosition + 1) * editor.LetterWidth;
+            //double bottom = (endInfo.row + 1) * editor.LetterHeight;
+
+            //double width = right - left;
+            //double height = bottom - top;
+
+            //drawingContext.DrawRectangle(Brush, Pen, new Rect(left, top, width, height));
+        }
 
         public void OnRender(Editor editor, DrawingContext drawingContext, int inStringPosition)
         {
@@ -46,6 +84,14 @@ namespace ScriptEditor
 
             double left = startInfo.inRowPosition * editor.LetterWidth;
             double top = startInfo.row * editor.LetterHeight;
+
+            //var isSelection = Tags.Contains("selection");
+
+            //if (isSelection)
+            //{
+            //    var poss = editor.Document.GetPositionInText(editor.SelectionRange.left);
+            //    left = poss.inRowPosition * editor.LetterWidth;
+            //}
 
             var ft = new FormattedText(
                 ch.ToString(),

@@ -3,10 +3,29 @@ using System.Linq;
 
 namespace ScriptEditor
 {
+    public static class Tag
+    {
+        // selection
+        public const int Selection = 0;
+
+        // reserved-keywords
+        public const int ReservedKeywords = 1;
+
+        // lexical
+        public const int Lexical = 2;
+
+        // syntax
+        public const int Syntax = 3;
+
+        // semantic
+        public const int Semantic = 4;
+
+    }
+
     public abstract class Block
     {
         //public string Tag { get; set; } = string.Empty;
-        public string[] Tags { get; set; }
+        public int[] Tags { get; set; }
 
         public LinkedListNode<char> Start { get; set; }
         public LinkedListNode<char> End { get; set; }
@@ -14,15 +33,23 @@ namespace ScriptEditor
         public string Text => Characters.ToStr();
         public IEnumerable<char> Characters => Start.GetRange(End);
 
-        private static readonly List<string> decorationPriorityTable = new List<string>
+       
+
+
+        private static readonly List<int> decorationPriorityTable = new List<int>
         {
-            "selection",
-            "reserved-keywords",
-            "lexical",
-            "syntax",
-            "semantic",
-            string.Empty,
+            Tag.Selection,
+            Tag.ReservedKeywords,
+            Tag.Lexical,
+            Tag.Syntax,
+            Tag.Semantic,
         };
+
+        public static T[] GetDecorations<T>(IDocument document) where T : Block
+        {
+            var allBlocks = document.TextLookBlocks.OfType<T>().ToArray();
+            return allBlocks;
+        }
 
         public static T[] DistinctDecorations<T>(IDocument document) where T : Block
         {

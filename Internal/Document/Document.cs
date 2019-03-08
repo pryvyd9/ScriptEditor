@@ -93,7 +93,7 @@ namespace ScriptEditor
 
             if (rowIndex >= Lines.Count)
             {
-                if(Content.Last.Value == LineEnding.Last())
+                if(Content.Last.Value == LineEnding[LineEnding.Length - 1])
                 {
                     return GetPositionInText(Content.Last.GetAtOffset(-LineEnding.Length+1));
                 }
@@ -154,15 +154,23 @@ namespace ScriptEditor
 
             LinkedListNode<char> current = Content.First;
 
-            for(int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
+            for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
             {
-                if(Lines.Any(n=>n.Start == current))
+
+                int i = 0;
+
+                foreach (var line in Lines)
                 {
-                    row = Lines.IndexOf(Lines.First(n => n.Start == current));
-                    inRowPosition = 0;
+                    if (line.Start == current)
+                    {
+                        row = i;
+                        inRowPosition = 0;
+                        break;
+                    }
+                    i++;
                 }
 
-                if(current == node)
+                if (current == node)
                 {
                     return (inStringPosition, row, inRowPosition);
                 }
@@ -172,6 +180,32 @@ namespace ScriptEditor
 
             return (-1, -1, -1);
         }
+
+        //public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node)
+        //{
+        //    int row = 0;
+        //    int inRowPosition = 0;
+
+        //    LinkedListNode<char> current = Content.First;
+
+        //    for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
+        //    {
+        //        if (Lines.Any(n => n.Start == current))
+        //        {
+        //            row = Lines.IndexOf(Lines.First(n => n.Start == current));
+        //            inRowPosition = 0;
+        //        }
+
+        //        if (current == node)
+        //        {
+        //            return (inStringPosition, row, inRowPosition);
+        //        }
+
+        //        current = current.Next;
+        //    }
+
+        //    return (-1, -1, -1);
+        //}
 
         public (LinkedListNode<char> start, LinkedListNode<char> end) GetWordOf(LinkedListNode<char> letter)
         {
@@ -536,7 +570,7 @@ namespace ScriptEditor
             TextLookBlocks.Clear();
         }
 
-        public void ApplyHighlight((int start, int end)[] ranges, string[] tags, Brush brush, Pen pen = null)
+        public void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null)
         {
             foreach (var range in ranges)
             {
@@ -560,7 +594,7 @@ namespace ScriptEditor
             }
         }
 
-        public void ApplyTextColor((int start, int end)[] ranges, string[] tags, Brush brush)
+        public void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush)
         {
             foreach (var range in ranges)
             {
