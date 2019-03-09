@@ -32,8 +32,9 @@ namespace ScriptEditor
 
         public string Text => Characters.ToStr();
         public IEnumerable<char> Characters => Start.GetRange(End);
+        public int Length => Start.GetRangeLength(End);
 
-       
+
 
 
         private static readonly List<int> decorationPriorityTable = new List<int>

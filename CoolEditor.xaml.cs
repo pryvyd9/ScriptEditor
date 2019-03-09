@@ -106,19 +106,23 @@ namespace ScriptEditor
             {
                 allTags = allTags.Concat(tags).ToArray();
             }
-
+            
             var brush = new SolidColorBrush(color);
 
             document.Updated += d =>
             {
                 d.TextLookBlocks.RemoveAll(n => n.Tags.Contains(colorizeTag));
 
-                foreach (var keyword in keywords)
-                {
-                    var search = d.FindAll(keyword, 0, d.Text.Length - 1);
-                    d.ApplyTextColor(search, allTags, brush);
-                    d.ApplyHighlight(search, allTags, brush);
-                }
+                var search = d.FindAll(keywords, 0, d.Text.Length - 1);
+                d.ApplyTextColor(search, allTags, brush);
+
+
+                //foreach (var keyword in keywords)
+                //{
+                //    var search = d.FindAll(keyword, 0, d.Text.Length - 1);
+                //    d.ApplyTextColor(search, allTags, brush);
+                //    //d.ApplyHighlight(search, allTags, brush);
+                //}
             };
         }
 

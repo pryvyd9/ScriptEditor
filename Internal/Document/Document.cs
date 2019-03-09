@@ -124,7 +124,6 @@ namespace ScriptEditor
             {
                 charElement = line.Start.GetAtOffset(inRowIndex);
                 inStringPosition = Content.IndexOf(charElement);
-
             }
 
             return (inStringPosition, rowIndex, inRowIndex);
@@ -134,13 +133,12 @@ namespace ScriptEditor
         {
             var line = Lines[row];
 
-            if(line.Start.GetRange(line.End).Count() - 1 <= inRowPosition)
+            if (line.Length - 1 <= inRowPosition)
             {
-                return GetPositionInText(line.End.GetAtOffset(-1));
+                return GetPositionInText(line.End.Previous);
             }
 
             return GetPositionInText(line.Start.GetAtOffset(inRowPosition));
-
         }
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(int inStringPosition)
@@ -150,11 +148,7 @@ namespace ScriptEditor
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node)
         {
-            
-            //LinkedListNode<char> current = Content.First;
-
             int inStringPosition = 0;
-            //int inRowPosition = 0;
             int row = 0;
 
             foreach (var line in Lines)
@@ -163,8 +157,6 @@ namespace ScriptEditor
 
                 if (lineText.Contains(node.Value))
                 {
-                    LinkedListNode<char> current = line.Start;
-
                     var lineNodes = line.Start.GetRangeNodes(lineText.Length).ToArray();
 
                     for (int inRowPosition = 0; inRowPosition < lineText.Length; inStringPosition++, inRowPosition++)
@@ -175,80 +167,20 @@ namespace ScriptEditor
                         }
                     }
 
+                    // If not found then increment row index.
                     row++;
-
                 }
                 else
                 {
-                    
                     inStringPosition += lineText.Length;
                     row++;
                 }
 
             }
 
-            //for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
-            //{
-
-            //    int i = 0;
-
-            //    foreach (var line in Lines)
-            //    {
-            //        if (line.Start == current)
-            //        {
-            //            row = i;
-            //            inRowPosition = 0;
-            //            break;
-            //        }
-            //        i++;
-            //    }
-
-            //    if (current == node)
-            //    {
-            //        return (inStringPosition, row, inRowPosition);
-            //    }
-
-            //    current = current.Next;
-            //}
-
             return (-1, -1, -1);
         }
-
-        //public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node)
-        //{
-        //    int row = 0;
-        //    int inRowPosition = 0;
-
-        //    LinkedListNode<char> current = Content.First;
-
-        //    for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
-        //    {
-
-        //        int i = 0;
-
-        //        foreach (var line in Lines)
-        //        {
-        //            if (line.Start == current)
-        //            {
-        //                row = i;
-        //                inRowPosition = 0;
-        //                break;
-        //            }
-        //            i++;
-        //        }
-
-        //        if (current == node)
-        //        {
-        //            return (inStringPosition, row, inRowPosition);
-        //        }
-
-        //        current = current.Next;
-        //    }
-
-        //    return (-1, -1, -1);
-        //}
-
-
+        
         public (LinkedListNode<char> start, LinkedListNode<char> end) GetWordOf(LinkedListNode<char> letter)
         {
             LinkedListNode<char> current = letter;
@@ -669,34 +601,34 @@ namespace ScriptEditor
         #endregion
 
 
+        public (int start, int end)[] FindAll(string[] substrings, int startIndex, int endIndex)
+        {
+            var start = Content.NodeAt(startIndex);
+            var end = Content.NodeAt(endIndex);
+
+            var text = start.GetRange(end).ToStr();
+
+            var indices = text.IndexOfAll(substrings);
+
+            var unitednIndeices = indices
+                .SelectMany((n, i) => n.Select(m => (m, m + substrings[i].Length - 1))).ToArray();
+
+            return unitednIndeices;
+
+        }
+
+
         public (int start, int end)[] FindAll(string substring, int startIndex, int endIndex)
         {
             var start = Content.NodeAt(startIndex);
             var end = Content.NodeAt(endIndex);
 
+            var text = start.GetRange(end).ToStr();
 
-            var list = new List<(int start, int end)>();
+            var indices = text.IndexOfAll(substring);
 
-            for (int i = startIndex; ;)
-            {
-                var text = start.GetRange(end).ToStr();
+            return indices.Select(n => (n, n + substring.Length - 1)).ToArray();
 
-                var offset = text.IndexOf(substring);
-
-                if (offset == -1)
-                {
-                    break;
-                }
-
-                list.Add((i + offset, i + offset + substring.Length - 1));
-
-                start = start.GetAtOffset(offset + substring.Length);
-
-                i += offset + substring.Length;
-
-            }
-
-            return list.ToArray();
         }
 
         private bool IsWhiteDelimiter(char ch)

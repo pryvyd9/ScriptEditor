@@ -12,6 +12,97 @@ namespace ScriptEditor
         {
             return new string(collection.ToArray());
         }
+
+        public static int[] IndexOfAll(this string str, string subString)
+        {
+            int length = subString.Length;
+
+            var indices = new List<int>();
+
+            for (int i = 0; i < str.Length; i++)
+            {
+                if (str[i] == subString[0])
+                {
+                    int k = i;
+
+                    i++;
+
+                    for (int j = 1, matchCounter = 1; j < length; j++, i++)
+                    {
+                        if (str[i] == subString[j])
+                        {
+                            matchCounter++;
+                        }
+                        else
+                        {
+                            matchCounter = 0;
+                        }
+
+                        if (matchCounter == length)
+                        {
+                            indices.Add(k);
+                            break;
+                        }
+
+                    }
+                }
+                
+            }
+
+            return indices.ToArray();
+        }
+
+        public static int[][] IndexOfAll(this string str, string[] subStrings)
+        {
+            //int length = subString.Length;
+
+            var indices = subStrings.Select(n => new List<int>()).ToArray();
+
+            for (int i = 0; i < str.Length; i++)
+            {
+                var substringWithMatchingBeginning = subStrings
+                    .Where(n => n[0] == str[i])
+                    .ToList();
+
+                if (substringWithMatchingBeginning.Count > 0)
+                {
+                    int k = i;
+
+                    i++;
+                    int ii = i;
+
+                    int substringIndex = 0;
+                    foreach (var substring in subStrings)
+                    {
+                        for (int j = 1, matchCounter = 1; j < substring.Length; j++, ii++)
+                        {
+                            if (str[ii] == substring[j])
+                            {
+                                matchCounter++;
+                            }
+                            else
+                            {
+                                matchCounter = 0;
+                            }
+
+                            if (matchCounter == substring.Length)
+                            {
+                                indices[substringIndex].Add(k);
+                                break;
+                            }
+
+                        }
+
+                        substringIndex++;
+                    }
+
+                }
+
+
+            }
+
+            return indices.Select(n => n.ToArray()).ToArray();
+        }
     }
 
     public static class LinkedListExtensions
@@ -23,51 +114,6 @@ namespace ScriptEditor
                 list.AddLast(item);
             }
         }
-
-        //private static LinkedListNode<T> GetAtOffsetForth<T>(LinkedListNode<T> node, int offset)
-        //{
-        //    var watch = System.Diagnostics.Stopwatch.StartNew();
-
-        //    for (int i = 0; i < offset; ++i)
-        //    {
-        //        node = node.Next;
-        //    }
-        //    watch.Stop();
-        //    Console.WriteLine(watch.ElapsedMilliseconds);
-
-        //    return node;
-        //}
-
-        //private static LinkedListNode<T> GetAtOffsetBack<T>(LinkedListNode<T> node, int offset)
-        //{
-        //    var watch = System.Diagnostics.Stopwatch.StartNew();
-
-        //    for (int i = 0; i > offset; --i)
-        //    {
-        //        node = node.Previous;
-        //    }
-        //    watch.Stop();
-
-        //    Console.WriteLine(watch.ElapsedMilliseconds);
-        //    return node;
-        //}
-
-        //public static LinkedListNode<T> GetAtOffset<T>(this LinkedListNode<T> start, int offset)
-        //{
-
-        //    if (offset == 0)
-        //    {
-        //        return start;
-        //    }
-        //    else if (offset < 0)
-        //    {
-        //        return GetAtOffsetBack(start, offset);
-        //    }
-        //    else
-        //    {
-        //        return GetAtOffsetForth(start, offset);
-        //    }
-        //}
 
         public static LinkedListNode<T> GetAtOffset<T>(this LinkedListNode<T> start, int offset)
         {
@@ -138,6 +184,31 @@ namespace ScriptEditor
             buffer.Add(end.Value);
 
             return buffer;
+        }
+
+        public static int GetRangeLength<T>(this LinkedListNode<T> start, LinkedListNode<T> end)
+        {
+            if (start == end)
+            {
+                return 1;
+            }
+
+            var current = start;
+
+            int i = 1;
+
+            while (current.Next != end)
+            {
+                if (current.Next == null)
+                {
+                    throw new Exception("end point does not precede start point.");
+                }
+
+                current = current.Next;
+                i++;
+            }
+
+            return i;
         }
 
         public static IEnumerable<LinkedListNode<T>> GetRangeNodes<T>(this LinkedListNode<T> start, int offset)

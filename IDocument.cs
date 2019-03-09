@@ -54,7 +54,7 @@ namespace ScriptEditor
         void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null);
         void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush);
 
-
+        (int start, int end)[] FindAll(string[] substrings, int startIndex, int endIndex);
         (int start, int end)[] FindAll(string substring, int startIndex, int endIndex);
     }
 
