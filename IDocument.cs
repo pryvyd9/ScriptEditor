@@ -51,7 +51,8 @@ namespace ScriptEditor
 
         void RollbackChanges();
 
-        void ResetFormat(bool clearSelection = false);
+        void ResetHighlight(bool clearSelection = false);
+        void ResetAllFormat(bool clearSelection = false);
         void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null);
         void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush);
 

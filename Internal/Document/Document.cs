@@ -453,7 +453,7 @@ namespace ScriptEditor
             }
             else if (lines.Any(n => n.End == node))
             {
-                throw new Exception("is this place even reachable?");
+                //throw new Exception("is this place even reachable?");
                 var line = lines.First(n => n.End == node);
                 line.End = node.Previous;
             }
@@ -543,7 +543,19 @@ namespace ScriptEditor
 
         #region Format
 
-        public void ResetFormat(bool clearSelection = false)
+        public void ResetHighlight(bool clearSelection = false)
+        {
+            if (clearSelection)
+            {
+                TextLookBlocks.RemoveAll(n => n is HighlightBlock);
+            }
+            else
+            {
+                TextLookBlocks.RemoveAll(n => n is HighlightBlock && !n.Tags.Contains(Tag.Selection));
+            }
+        }
+
+        public void ResetAllFormat(bool clearSelection = false)
         {
             if (clearSelection)
             {

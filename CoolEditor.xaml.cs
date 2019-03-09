@@ -115,14 +115,6 @@ namespace ScriptEditor
 
                 var search = d.FindAll(keywords, 0, d.Length - 1);
                 d.ApplyTextColor(search, allTags, brush);
-
-
-                //foreach (var keyword in keywords)
-                //{
-                //    var search = d.FindAll(keyword, 0, d.Text.Length - 1);
-                //    d.ApplyTextColor(search, allTags, brush);
-                //    //d.ApplyHighlight(search, allTags, brush);
-                //}
             };
         }
 

@@ -513,6 +513,8 @@ namespace ScriptEditor
                 var range = Document.GetRange(SelectionRange.left, SelectionRange.right + 1);
 
                 Document.Replace(range, ch);
+
+                isSelected = false;
             }
             else
             {
