@@ -56,7 +56,7 @@ namespace ScriptEditor
         {
             var allBlocks = document.TextLookBlocks.OfType<T>().ToArray();
 
-            var textLength = document.Text.Length;
+            var textLength = document.Length;
 
             var positions = allBlocks
                 .Select((n,i) => 

@@ -14,6 +14,7 @@ namespace ScriptEditor
         char[] InvisibleCharacters { get; }
         string LineEnding { get; }
         string Text { get; }
+        int Length { get; }
         string Name { get; }
         string Path { get; }
         bool IsRevertingChanges { get; }

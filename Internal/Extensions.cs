@@ -54,27 +54,20 @@ namespace ScriptEditor
 
         public static int[][] IndexOfAll(this string str, string[] subStrings)
         {
-            //int length = subString.Length;
-
             var indices = subStrings.Select(n => new List<int>()).ToArray();
 
             for (int i = 0; i < str.Length; i++)
             {
-                var substringWithMatchingBeginning = subStrings
-                    .Where(n => n[0] == str[i])
-                    .ToList();
-
-                if (substringWithMatchingBeginning.Count > 0)
+                if (subStrings.Any(n => n[0] == str[i]))
                 {
                     int k = i;
 
                     i++;
-                    int ii = i;
 
                     int substringIndex = 0;
                     foreach (var substring in subStrings)
                     {
-                        for (int j = 1, matchCounter = 1; j < substring.Length; j++, ii++)
+                        for (int j = 1, matchCounter = 1, ii = i; j < substring.Length; j++, ii++)
                         {
                             if (str[ii] == substring[j])
                             {

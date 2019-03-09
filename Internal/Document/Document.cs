@@ -22,6 +22,8 @@ namespace ScriptEditor
 
         public string Text => new string(Content.ToArray());
 
+        public int Length => Content.Count;
+
         public string Name { get; set; } = "noname";
 
         public string Path { get; set; } = string.Empty;
