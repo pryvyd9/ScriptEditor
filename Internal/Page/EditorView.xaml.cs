@@ -34,7 +34,7 @@ namespace ScriptEditor
             editor.Refresh();
         }
 
-        public void SetDocument(Document document)
+        public void SetDocument(IDocument document)
         {
             editor = new Editor();
             editor.SetDocument(document);

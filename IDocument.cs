@@ -18,6 +18,8 @@ namespace ScriptEditor
         string Path { get; }
         bool IsRevertingChanges { get; }
 
+        event DocumentUpdatedEventHandler Updated;
+        event DocumentUpdatedEventHandler FormatUpdated;
 
 
         void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch);
@@ -48,7 +50,7 @@ namespace ScriptEditor
 
         void RollbackChanges();
 
-
+        void ResetFormat(bool clearSelection = false);
         void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null);
         void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush);
 

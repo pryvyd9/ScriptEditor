@@ -35,6 +35,7 @@ namespace ScriptEditor
         public char[] InvisibleCharacters { get; } = new[] { '\r', '\n' };
 
         public event DocumentUpdatedEventHandler Updated;
+        public event DocumentUpdatedEventHandler FormatUpdated;
 
         public bool IsRevertingChanges => changes.IsRevertingChanges;
 
@@ -149,34 +150,66 @@ namespace ScriptEditor
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node)
         {
+            
+            //LinkedListNode<char> current = Content.First;
+
+            int inStringPosition = 0;
+            //int inRowPosition = 0;
             int row = 0;
-            int inRowPosition = 0;
 
-            LinkedListNode<char> current = Content.First;
-
-            for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
+            foreach (var line in Lines)
             {
+                var lineText = line.Text;
 
-                int i = 0;
-
-                foreach (var line in Lines)
+                if (lineText.Contains(node.Value))
                 {
-                    if (line.Start == current)
+                    LinkedListNode<char> current = line.Start;
+
+                    var lineNodes = line.Start.GetRangeNodes(lineText.Length).ToArray();
+
+                    for (int inRowPosition = 0; inRowPosition < lineText.Length; inStringPosition++, inRowPosition++)
                     {
-                        row = i;
-                        inRowPosition = 0;
-                        break;
+                        if (node == lineNodes[inRowPosition])
+                        {
+                            return (inStringPosition, row, inRowPosition);
+                        }
                     }
-                    i++;
-                }
 
-                if (current == node)
+                    row++;
+
+                }
+                else
                 {
-                    return (inStringPosition, row, inRowPosition);
+                    
+                    inStringPosition += lineText.Length;
+                    row++;
                 }
 
-                current = current.Next;
             }
+
+            //for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
+            //{
+
+            //    int i = 0;
+
+            //    foreach (var line in Lines)
+            //    {
+            //        if (line.Start == current)
+            //        {
+            //            row = i;
+            //            inRowPosition = 0;
+            //            break;
+            //        }
+            //        i++;
+            //    }
+
+            //    if (current == node)
+            //    {
+            //        return (inStringPosition, row, inRowPosition);
+            //    }
+
+            //    current = current.Next;
+            //}
 
             return (-1, -1, -1);
         }
@@ -190,10 +223,18 @@ namespace ScriptEditor
 
         //    for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
         //    {
-        //        if (Lines.Any(n => n.Start == current))
+
+        //        int i = 0;
+
+        //        foreach (var line in Lines)
         //        {
-        //            row = Lines.IndexOf(Lines.First(n => n.Start == current));
-        //            inRowPosition = 0;
+        //            if (line.Start == current)
+        //            {
+        //                row = i;
+        //                inRowPosition = 0;
+        //                break;
+        //            }
+        //            i++;
         //        }
 
         //        if (current == node)
@@ -206,6 +247,7 @@ namespace ScriptEditor
 
         //    return (-1, -1, -1);
         //}
+
 
         public (LinkedListNode<char> start, LinkedListNode<char> end) GetWordOf(LinkedListNode<char> letter)
         {
@@ -559,15 +601,25 @@ namespace ScriptEditor
         public void RollbackChanges()
         {
             changes.RollBack();
+
+            Updated?.Invoke(this);
         }
 
         #endregion
 
         #region Format
 
-        public void ResetFormat()
+        public void ResetFormat(bool clearSelection = false)
         {
-            TextLookBlocks.Clear();
+            if (clearSelection)
+            {
+                TextLookBlocks.Clear();
+            }
+            else
+            {
+                TextLookBlocks.RemoveAll(n => !n.Tags.Contains(Tag.Selection));
+            }
+            //TextLookBlocks.Clear();
         }
 
         public void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null)
@@ -592,6 +644,8 @@ namespace ScriptEditor
 
                 TextLookBlocks.Add(t);
             }
+
+            FormatUpdated?.Invoke(this);
         }
 
         public void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush)
@@ -608,6 +662,8 @@ namespace ScriptEditor
 
                 TextLookBlocks.Add(t);
             }
+
+            FormatUpdated?.Invoke(this);
         }
 
         #endregion
