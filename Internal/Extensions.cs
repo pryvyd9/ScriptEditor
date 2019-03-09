@@ -52,46 +52,40 @@ namespace ScriptEditor
             return indices.ToArray();
         }
 
+        private static bool BeginsWith(string origin, int oindex, string substring, int sindex)
+        {
+            for (int i = 0; i < substring.Length - sindex; i++)
+            {
+                if (origin[oindex + i] != substring[sindex + i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static int[][] IndexOfAll(this string str, string[] subStrings)
         {
             var indices = subStrings.Select(n => new List<int>()).ToArray();
 
             for (int i = 0; i < str.Length; i++)
             {
-                if (subStrings.Any(n => n[0] == str[i]))
+                var substringsForMatching = subStrings
+                    .Select((n, index) => (index, n))
+                    .Where(n => n.n[0] == str[i]);
+
+
+                if (substringsForMatching.Count() > 0)
                 {
-                    int k = i;
-
-                    i++;
-
-                    int substringIndex = 0;
-                    foreach (var substring in subStrings)
+                    foreach (var (substringIndex, substring) in substringsForMatching)
                     {
-                        for (int j = 1, matchCounter = 1, ii = i; j < substring.Length; j++, ii++)
+                        if (BeginsWith(str, i + 1, substring, 1))
                         {
-                            if (str[ii] == substring[j])
-                            {
-                                matchCounter++;
-                            }
-                            else
-                            {
-                                matchCounter = 0;
-                            }
-
-                            if (matchCounter == substring.Length)
-                            {
-                                indices[substringIndex].Add(k);
-                                break;
-                            }
-
+                            indices[substringIndex].Add(i);
                         }
-
-                        substringIndex++;
                     }
-
                 }
-
-
             }
 
             return indices.Select(n => n.ToArray()).ToArray();
