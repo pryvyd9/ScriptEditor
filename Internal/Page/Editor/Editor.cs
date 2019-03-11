@@ -622,8 +622,6 @@ namespace ScriptEditor
                         UpdateCaretInStringPosition();
 
                         Refresh();
-
-                        
                     }
                     return;
                 case Key.C:
@@ -639,6 +637,16 @@ namespace ScriptEditor
                             Clipboard.SetText(GetSelectedText());
                             ClearSelection();
                         }
+                    }
+                    return;
+                case Key.A:
+                    if (isControled)
+                    {
+                        ClearSelectionHighlighting();
+
+                        ClearSelection();
+
+                        SelectAndHighlightText(0, Document.Length - Document.LineEnding.Length);
                     }
                     return;
                 case Key.V:

@@ -158,14 +158,14 @@ namespace ScriptEditor
 
             while (current.Next != end)
             {
-                if (current.Next == null)
-                {
-                    throw new Exception("end point does not precede start point.");
-                }
-
-                current = current.Next;
+                current = current.Next ?? throw new Exception("end point does not precede start point.");
 
                 buffer.Add(current.Value);
+            }
+
+            if (end is null)
+            {
+                return buffer;
             }
 
             buffer.Add(end.Value);
