@@ -113,11 +113,6 @@ namespace ScriptEditor
             Children.Add(Caret);
 
 
-
-            var color = Brushes.SkyBlue.Color;
-            color.A = 150;
-
-            SelectionBrush = new SolidColorBrush(color);
         }
 
 
@@ -134,6 +129,13 @@ namespace ScriptEditor
             container.Children.Add(ScrollViewer);
 
             ScrollViewer.Content = this;
+
+
+
+            var color = Brushes.SkyBlue.Color;
+            color.A = 150;
+
+            SelectionBrush = new SolidColorBrush(color);
         }
 
         public void Refresh()
@@ -145,13 +147,15 @@ namespace ScriptEditor
             MoveCaret(Caret, viewport);
         }
 
-        public void SetDocument(Document document)
+        public void SetDocument(IDocument document)
         {
             Document = DocumentChangeProxy.AsIDocument(document);
 
             Document.Content.CollectionChanged += FixCaretPositionOnDocumentChanged;
 
             Caret.Position = Document.Content.NodeAt(0);
+
+            document.FormatUpdated += d => Refresh();
         }
 
         private void FixCaretPositionOnDocumentChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -509,6 +513,8 @@ namespace ScriptEditor
                 var range = Document.GetRange(SelectionRange.left, SelectionRange.right + 1);
 
                 Document.Replace(range, ch);
+
+                isSelected = false;
             }
             else
             {
@@ -578,9 +584,9 @@ namespace ScriptEditor
                 return;
             }
 
-            if (key >= Key.D0 && key <= Key.D9)
+            if (Key.D0 <= key && key <= Key.D9 || Key.NumPad0 <= key && key <= Key.NumPad9)
             {
-                ch = key.ToString().Substring(1)[0];
+                ch = key.ToString().Last();
 
 
                 if (Keyboard.Modifiers == ModifierKeys.Shift)
@@ -633,6 +639,16 @@ namespace ScriptEditor
                         }
                     }
                     return;
+                case Key.A:
+                    if (isControled)
+                    {
+                        ClearSelectionHighlighting();
+
+                        ClearSelection();
+
+                        SelectAndHighlightText(0, Document.Length - Document.LineEnding.Length);
+                    }
+                    return;
                 case Key.V:
                     if (isControled)
                     {
@@ -671,6 +687,18 @@ namespace ScriptEditor
                     break;
                 case Key.Oem5:
                     ch = isShifted ? '|' : '\\';
+                    break;
+                case Key.Add:
+                    ch = '+';
+                    break;
+                case Key.Subtract:
+                    ch = '-';
+                    break;
+                case Key.Multiply:
+                    ch = '*';
+                    break;
+                case Key.Divide:
+                    ch = '/';
                     break;
                 case Key.Back:
                     {
@@ -1001,8 +1029,8 @@ namespace ScriptEditor
                 var posEnd = Document.GetPositionInText(block.End);
 
                 // For some reason end is located one position behind
-                posEnd.inRowPosition++;
-                posEnd.inStringPosition++;
+                //posEnd.inRowPosition++;
+                //posEnd.inStringPosition++;
 
                 if (posEnd.row == posStart.row)
                 {

@@ -14,10 +14,13 @@ namespace ScriptEditor
         char[] InvisibleCharacters { get; }
         string LineEnding { get; }
         string Text { get; }
+        int Length { get; }
         string Name { get; }
         string Path { get; }
         bool IsRevertingChanges { get; }
 
+        event DocumentUpdatedEventHandler Updated;
+        event DocumentUpdatedEventHandler FormatUpdated;
 
 
         void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch);
@@ -48,11 +51,12 @@ namespace ScriptEditor
 
         void RollbackChanges();
 
-
+        void ResetHighlight(bool clearSelection = false);
+        void ResetAllFormat(bool clearSelection = false);
         void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null);
         void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush);
 
-
+        (int start, int end)[] FindAll(string[] substrings, int startIndex, int endIndex);
         (int start, int end)[] FindAll(string substring, int startIndex, int endIndex);
     }
 

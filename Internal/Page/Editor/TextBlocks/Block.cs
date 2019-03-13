@@ -32,8 +32,9 @@ namespace ScriptEditor
 
         public string Text => Characters.ToStr();
         public IEnumerable<char> Characters => Start.GetRange(End);
+        public int Length => Start.GetRangeLength(End);
 
-       
+
 
 
         private static readonly List<int> decorationPriorityTable = new List<int>
@@ -55,7 +56,7 @@ namespace ScriptEditor
         {
             var allBlocks = document.TextLookBlocks.OfType<T>().ToArray();
 
-            var textLength = document.Text.Length;
+            var textLength = document.Length;
 
             var positions = allBlocks
                 .Select((n,i) => 

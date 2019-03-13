@@ -20,9 +20,9 @@ namespace ScriptEditor
     /// </summary>
     public partial class CoolEditor : UserControl
     {
-        private readonly HashSet<(Document, EditorView)> editors = new HashSet<(Document, EditorView)>();
+        private readonly HashSet<(IDocument, EditorView)> editors = new HashSet<(IDocument, EditorView)>();
 
-        private bool TryFindTabItem(Document document, out TabItem tab)
+        private bool TryFindTabItem(IDocument document, out TabItem tab)
         {
             var elementTofind = editors.First(n => n.Item1 == document);
 
@@ -44,7 +44,7 @@ namespace ScriptEditor
             InitializeComponent();
         }
 
-        public void OpenDocument(Document document)
+        public void OpenDocument(IDocument document)
         {
             EditorView editor = new EditorView();
 
@@ -55,7 +55,7 @@ namespace ScriptEditor
             editorsHolder.Items.Add(new TabItem() { Content = editor, Header = document.Name });
         }
 
-        public void CloseDocument(Document document)
+        public void CloseDocument(IDocument document)
         {
             var elementToRemove = editors.First(n => n.Item1 == document);
 
@@ -79,7 +79,7 @@ namespace ScriptEditor
             }
         }
 
-        public void Focus(Document document)
+        public void Focus(IDocument document)
         {
             if (TryFindTabItem(document, out var tab))
             {
@@ -96,9 +96,27 @@ namespace ScriptEditor
 
         }
 
-        public void Highlight(Document document)
+        public void ApplyTextColor(IDocument document, string[] keywords, Color color, int[] tags = null)
         {
-            throw new NotImplementedException();
+            var colorizeTag = -1;
+
+            var allTags = new[] { colorizeTag };
+
+            if (tags != null)
+            {
+                allTags = allTags.Concat(tags).ToArray();
+            }
+            
+            var brush = new SolidColorBrush(color);
+
+            document.Updated += d =>
+            {
+                d.TextLookBlocks.RemoveAll(n => n.Tags.Contains(colorizeTag));
+
+                var search = d.FindAll(keywords, 0, d.Length - 1);
+                d.ApplyTextColor(search, allTags, brush);
+            };
         }
+
     }
 }

@@ -22,6 +22,8 @@ namespace ScriptEditor
 
         public string Text => new string(Content.ToArray());
 
+        public int Length => Content.Count;
+
         public string Name { get; set; } = "noname";
 
         public string Path { get; set; } = string.Empty;
@@ -35,6 +37,7 @@ namespace ScriptEditor
         public char[] InvisibleCharacters { get; } = new[] { '\r', '\n' };
 
         public event DocumentUpdatedEventHandler Updated;
+        public event DocumentUpdatedEventHandler FormatUpdated;
 
         public bool IsRevertingChanges => changes.IsRevertingChanges;
 
@@ -123,7 +126,6 @@ namespace ScriptEditor
             {
                 charElement = line.Start.GetAtOffset(inRowIndex);
                 inStringPosition = Content.IndexOf(charElement);
-
             }
 
             return (inStringPosition, rowIndex, inRowIndex);
@@ -133,13 +135,12 @@ namespace ScriptEditor
         {
             var line = Lines[row];
 
-            if(line.Start.GetRange(line.End).Count() - 1 <= inRowPosition)
+            if (line.Length - 1 <= inRowPosition)
             {
-                return GetPositionInText(line.End.GetAtOffset(-1));
+                return GetPositionInText(line.End.Previous);
             }
 
             return GetPositionInText(line.Start.GetAtOffset(inRowPosition));
-
         }
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(int inStringPosition)
@@ -149,64 +150,39 @@ namespace ScriptEditor
 
         public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node)
         {
+            int inStringPosition = 0;
             int row = 0;
-            int inRowPosition = 0;
 
-            LinkedListNode<char> current = Content.First;
-
-            for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
+            foreach (var line in Lines)
             {
+                var lineText = line.Text;
 
-                int i = 0;
-
-                foreach (var line in Lines)
+                if (lineText.Contains(node.Value))
                 {
-                    if (line.Start == current)
+                    var lineNodes = line.Start.GetRangeNodes(lineText.Length).ToArray();
+
+                    for (int inRowPosition = 0; inRowPosition < lineText.Length; inStringPosition++, inRowPosition++)
                     {
-                        row = i;
-                        inRowPosition = 0;
-                        break;
+                        if (node == lineNodes[inRowPosition])
+                        {
+                            return (inStringPosition, row, inRowPosition);
+                        }
                     }
-                    i++;
-                }
 
-                if (current == node)
+                    // If not found then increment row index.
+                    row++;
+                }
+                else
                 {
-                    return (inStringPosition, row, inRowPosition);
+                    inStringPosition += lineText.Length;
+                    row++;
                 }
 
-                current = current.Next;
             }
 
             return (-1, -1, -1);
         }
-
-        //public (int inStringPosition, int row, int inRowPosition) GetPositionInText(LinkedListNode<char> node)
-        //{
-        //    int row = 0;
-        //    int inRowPosition = 0;
-
-        //    LinkedListNode<char> current = Content.First;
-
-        //    for (int inStringPosition = 0; inStringPosition < Content.Count; inStringPosition++, inRowPosition++)
-        //    {
-        //        if (Lines.Any(n => n.Start == current))
-        //        {
-        //            row = Lines.IndexOf(Lines.First(n => n.Start == current));
-        //            inRowPosition = 0;
-        //        }
-
-        //        if (current == node)
-        //        {
-        //            return (inStringPosition, row, inRowPosition);
-        //        }
-
-        //        current = current.Next;
-        //    }
-
-        //    return (-1, -1, -1);
-        //}
-
+        
         public (LinkedListNode<char> start, LinkedListNode<char> end) GetWordOf(LinkedListNode<char> letter)
         {
             LinkedListNode<char> current = letter;
@@ -477,7 +453,7 @@ namespace ScriptEditor
             }
             else if (lines.Any(n => n.End == node))
             {
-                throw new Exception("is this place even reachable?");
+                //throw new Exception("is this place even reachable?");
                 var line = lines.First(n => n.End == node);
                 line.End = node.Previous;
             }
@@ -559,15 +535,37 @@ namespace ScriptEditor
         public void RollbackChanges()
         {
             changes.RollBack();
+
+            Updated?.Invoke(this);
         }
 
         #endregion
 
         #region Format
 
-        public void ResetFormat()
+        public void ResetHighlight(bool clearSelection = false)
         {
-            TextLookBlocks.Clear();
+            if (clearSelection)
+            {
+                TextLookBlocks.RemoveAll(n => n is HighlightBlock);
+            }
+            else
+            {
+                TextLookBlocks.RemoveAll(n => n is HighlightBlock && !n.Tags.Contains(Tag.Selection));
+            }
+        }
+
+        public void ResetAllFormat(bool clearSelection = false)
+        {
+            if (clearSelection)
+            {
+                TextLookBlocks.Clear();
+            }
+            else
+            {
+                TextLookBlocks.RemoveAll(n => !n.Tags.Contains(Tag.Selection));
+            }
+            //TextLookBlocks.Clear();
         }
 
         public void ApplyHighlight((int start, int end)[] ranges, int[] tags, Brush brush, Pen pen = null)
@@ -592,6 +590,8 @@ namespace ScriptEditor
 
                 TextLookBlocks.Add(t);
             }
+
+            FormatUpdated?.Invoke(this);
         }
 
         public void ApplyTextColor((int start, int end)[] ranges, int[] tags, Brush brush)
@@ -608,9 +608,28 @@ namespace ScriptEditor
 
                 TextLookBlocks.Add(t);
             }
+
+            FormatUpdated?.Invoke(this);
         }
 
         #endregion
+
+
+        public (int start, int end)[] FindAll(string[] substrings, int startIndex, int endIndex)
+        {
+            var start = Content.NodeAt(startIndex);
+            var end = Content.NodeAt(endIndex);
+
+            var text = start.GetRange(end).ToStr();
+
+            var indices = text.IndexOfAll(substrings);
+
+            var unitednIndeices = indices
+                .SelectMany((n, i) => n.Select(m => (m, m + substrings[i].Length - 1))).ToArray();
+
+            return unitednIndeices;
+
+        }
 
 
         public (int start, int end)[] FindAll(string substring, int startIndex, int endIndex)
@@ -618,29 +637,12 @@ namespace ScriptEditor
             var start = Content.NodeAt(startIndex);
             var end = Content.NodeAt(endIndex);
 
+            var text = start.GetRange(end).ToStr();
 
-            var list = new List<(int start, int end)>();
+            var indices = text.IndexOfAll(substring);
 
-            for (int i = startIndex; ;)
-            {
-                var text = start.GetRange(end).ToStr();
+            return indices.Select(n => (n, n + substring.Length - 1)).ToArray();
 
-                var offset = text.IndexOf(substring);
-
-                if (offset == -1)
-                {
-                    break;
-                }
-
-                list.Add((i + offset, i + offset + substring.Length - 1));
-
-                start = start.GetAtOffset(offset + substring.Length);
-
-                i += offset + substring.Length;
-
-            }
-
-            return list.ToArray();
         }
 
         private bool IsWhiteDelimiter(char ch)

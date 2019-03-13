@@ -151,9 +151,9 @@ namespace ScriptEditor
             this.origin = document;
         }
 
-        internal static IDocument AsIDocument(Document document)
+        internal static IDocument AsIDocument(IDocument document)
         {
-            return new DocumentChangeProxy(document).ActLike<IDocument>();
+            return new DocumentChangeProxy((Document)document).ActLike<IDocument>();
         }
 
     }
