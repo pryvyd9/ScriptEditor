@@ -584,9 +584,9 @@ namespace ScriptEditor
                 return;
             }
 
-            if (key >= Key.D0 && key <= Key.D9)
+            if (Key.D0 <= key && key <= Key.D9 || Key.NumPad0 <= key && key <= Key.NumPad9)
             {
-                ch = key.ToString().Substring(1)[0];
+                ch = key.ToString().Last();
 
 
                 if (Keyboard.Modifiers == ModifierKeys.Shift)
@@ -687,6 +687,18 @@ namespace ScriptEditor
                     break;
                 case Key.Oem5:
                     ch = isShifted ? '|' : '\\';
+                    break;
+                case Key.Add:
+                    ch = '+';
+                    break;
+                case Key.Subtract:
+                    ch = '-';
+                    break;
+                case Key.Multiply:
+                    ch = '*';
+                    break;
+                case Key.Divide:
+                    ch = '/';
                     break;
                 case Key.Back:
                     {
