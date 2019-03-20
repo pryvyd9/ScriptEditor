@@ -980,6 +980,12 @@ namespace ScriptEditor
 
                     int row = posStart.row;
 
+                    // Fix row when position not found.
+                    if (row < 0)
+                    {
+                        row = 0;
+                    }
+
                     // First line
                     {
                         var line = Document.Lines[row];
