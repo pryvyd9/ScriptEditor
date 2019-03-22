@@ -36,7 +36,7 @@ namespace ScriptEditor
 
         private const double whiteSpaceOnTheRight = 200;
         private const double whiteSpaceOnTheBottom = 200;
-        private double MarginLeft => 0;
+        private double MarginLeft => LetterWidth / 2;
 
         private bool _shouldKeepFocus = false;
 
@@ -501,9 +501,11 @@ namespace ScriptEditor
             return;
         }
 
-
-
-
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            isMouseDown = false;
+            isMouseHeld = false;
+        }
 
 
         private void PutChar(char ch)
@@ -536,7 +538,11 @@ namespace ScriptEditor
             }
             else if (isLineSelected)
             {
-                var startPosition = Document.GetPositionInText(SelectionRange.left);
+                var startPosition = Document.GetPositionInText(Caret.Position);
+
+                //var caretPosition = GetCaretInStringPosition();
+
+                //var caretLine = 
 
                 var line = Document.Lines[startPosition.row];
 
@@ -1104,7 +1110,7 @@ namespace ScriptEditor
 
         private void PrintText(DrawingContext drawingContext)
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
+            //var watch = System.Diagnostics.Stopwatch.StartNew();
 
             // Get blocks.
             var highlightBlocks =
@@ -1118,7 +1124,7 @@ namespace ScriptEditor
 
             RenderTextColor(textColorBlocks, drawingContext);
 
-            Console.WriteLine(watch.ElapsedMilliseconds);
+            //Console.WriteLine(watch.ElapsedMilliseconds);
 
         }
 
@@ -1134,19 +1140,22 @@ namespace ScriptEditor
 
         protected override void OnRender(DrawingContext drawingContext)
         {
-            Console.WriteLine("---------------------start----------------------");
+            //Console.WriteLine("---------------------start----------------------");
 
             // Fill background
-            drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
+            drawingContext.DrawRectangle(Brushes.White, null, new Rect(-MarginLeft, 0, Width, Height));
 
             PrintText(drawingContext);
 
             UpdateElementSize();
 
             // Draw border
-            drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
+            //drawingContext.DrawRectangle(null, new Pen(Brushes.Blue, 1.0), new Rect(0, 0, Width, Height));
+            drawingContext.DrawLine(new Pen(Brushes.Blue, 1.0), new Point(0, 0), new Point(Width, 0));
+            drawingContext.DrawLine(new Pen(Brushes.Blue, 0.5), new Point(Width, 0), new Point(Width, Height));
+            drawingContext.DrawLine(new Pen(Brushes.Blue, 1.0), new Point(0, Height), new Point(Width, Height));
 
-            Console.WriteLine("---------------------end----------------------");
+            //Console.WriteLine("---------------------end----------------------");
 
         }
 
