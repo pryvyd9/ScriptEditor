@@ -109,13 +109,19 @@ namespace ScriptEditor
             
             var brush = new SolidColorBrush(color);
 
-            document.Updated += d =>
+            void Update(IDocument d)
             {
                 d.TextLookBlocks.RemoveAll(n => n.Tags.Contains(colorizeTag));
 
                 var search = d.FindAll(keywords, 0, d.Length - 1);
                 d.ApplyTextColor(search, allTags, brush);
-            };
+            }
+
+            document.Updated += Update;
+
+            Update(document);
+
+
         }
 
     }

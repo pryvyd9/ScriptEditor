@@ -57,18 +57,34 @@ namespace ScriptEditor
         public Line Line { get; }
 
         public int From { get; }
-        public int To { get; }
 
-        public MoveLineStart(Line line, int from, int to)
+        public MoveLineStart(Line line, int from)
         {
             Line = line;
             From = from;
-            To = to;
         }
 
         public override void Revert(Document document)
         {
             Line.Start = document.Content.NodeAt(From);
+        }
+    }
+
+    internal sealed class MoveLineEnd : Change
+    {
+        public Line Line { get; }
+
+        public int From { get; }
+
+        public MoveLineEnd(Line line, int from)
+        {
+            Line = line;
+            From = from;
+        }
+
+        public override void Revert(Document document)
+        {
+            Line.End = document.Content.NodeAt(From);
         }
     }
 

@@ -975,6 +975,11 @@ namespace ScriptEditor
                 posEnd.inRowPosition++;
                 posEnd.inStringPosition++;
 
+                if (posEnd.row < 0)
+                {
+                    continue;
+                }
+
                 if (posEnd.row == posStart.row)
                 {
                     var count = posEnd.inRowPosition - posStart.inRowPosition;
