@@ -350,7 +350,7 @@ namespace ScriptEditor
 
                 var index = Content.IndexOf(position);
 
-                changes.Add(new MoveLineStart(line, Content.IndexOf(position), index - 1));
+                changes.Add(new MoveLineStart(line, Content.IndexOf(position)));
 
                 line.Start = position.Previous;
             }
@@ -448,13 +448,16 @@ namespace ScriptEditor
                 var line = lines.First(n => n.Start == node);
                 var index = Content.IndexOf(line.Start);
 
-                changes.Add(new MoveLineStart(line, index, index + 1));
+                changes.Add(new MoveLineStart(line, index));
                 line.Start = node.Next;
             }
             else if (lines.Any(n => n.End == node))
             {
                 //throw new Exception("is this place even reachable?");
                 var line = lines.First(n => n.End == node);
+                var index = Content.IndexOf(line.End);
+
+                changes.Add(new MoveLineEnd(line, index));
                 line.End = node.Previous;
             }
             changes.Add(new Delete(node.Value, Content.IndexOf(node)));
@@ -505,6 +508,13 @@ namespace ScriptEditor
 
         public void MergeLines(Line first, Line second)
         {
+
+            var index = Content.IndexOf(second.End);
+            changes.Add(new MoveLineEnd(second, index));
+
+            //var indexStart = Content.IndexOf(second.Start);
+            //changes.Add(new MoveLineStart(second, indexStart));
+
             changes.Add(new LineMerge(first, second));
 
             var firstEnd = first.End;
