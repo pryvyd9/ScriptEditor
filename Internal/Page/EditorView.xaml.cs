@@ -20,6 +20,9 @@ namespace ScriptEditor
     /// </summary>
     public partial class EditorView : UserControl
     {
+        public event EditorFocusedEventHandler EditorFocused
+        { add => editor.EditorFocused += value; remove => editor.EditorFocused -= value; }
+
         private Editor editor;
 
         private RowCounter rowCounter;
@@ -59,16 +62,6 @@ namespace ScriptEditor
 
         private void Bind()
         {
-            //Binding editorBinding = new Binding
-            //{
-            //    Source = editor.ScrollViewer,
-            //    Path = new PropertyPath("ViewportHeight"),
-            //    Mode = BindingMode.OneWay,
-            //    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-            //};
-            //BindingOperations.SetBinding(editor, MinHeightProperty, editorBinding);
-
-
             Binding rowConterBinding = new Binding
             {
                 Source = (editor.ScrollViewer.Content as FrameworkElement),

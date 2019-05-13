@@ -24,7 +24,9 @@ namespace ScriptEditor
 
         public int Length => Content.Count;
 
-        public string Name { get; set; } = "noname";
+        private string name = "noname";
+
+        public string Name { get => name; set { name = value; NameChanged?.Invoke(this); } }
 
         public string Path { get; set; } = string.Empty;
 
@@ -38,6 +40,7 @@ namespace ScriptEditor
 
         public event DocumentUpdatedEventHandler Updated;
         public event DocumentUpdatedEventHandler FormatUpdated;
+        public event DocumentUpdatedEventHandler NameChanged;
 
         public bool IsRevertingChanges => changes.IsRevertingChanges;
 

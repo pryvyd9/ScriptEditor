@@ -21,6 +21,7 @@ namespace ScriptEditor
 
         event DocumentUpdatedEventHandler Updated;
         event DocumentUpdatedEventHandler FormatUpdated;
+        event DocumentUpdatedEventHandler NameChanged;
 
 
         void Replace(IEnumerable<LinkedListNode<char>> nodes, char ch);
