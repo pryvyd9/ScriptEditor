@@ -19,8 +19,13 @@ using static ScriptEditor.Tag;
 namespace ScriptEditor
 {
 
+
+    public delegate void EditorFocusedEventHandler(Editor editor);
+
     public sealed class Editor : Canvas
     {
+        public event EditorFocusedEventHandler EditorFocused;
+
         public static readonly DependencyProperty UpdateCrutchProperty;
 
         public IDocument Document { get; private set; }
@@ -303,6 +308,8 @@ namespace ScriptEditor
         protected override void OnGotFocus(RoutedEventArgs e)
         {
             Caret.Visibility = Visibility.Visible;
+
+            EditorFocused?.Invoke(this);
         }
 
         protected override void OnLostFocus(RoutedEventArgs e)
